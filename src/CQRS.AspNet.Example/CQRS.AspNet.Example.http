@@ -1,0 +1,6 @@
+@CQRS.AspNet.Example_HostAddress = http://localhost:5120
+
+GET {{CQRS.AspNet.Example_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

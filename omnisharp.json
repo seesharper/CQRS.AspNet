@@ -1,0 +1,15 @@
+{
+  "FormattingOptions": {
+    "EnableEditorConfigSupport": true,
+    "OrganizeImports": true
+  },
+  "RoslynExtensionsOptions": {
+    "EnableAnalyzersSupport": true,
+    "EnableDecompilationSupport": true,
+    "enableImportCompletion": true
+  },
+  "script": {
+    "enableScriptNuGetReferences": true,
+    "defaultTargetFramework": "net8.0"
+  }
+}
