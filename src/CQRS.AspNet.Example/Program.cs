@@ -1,8 +1,5 @@
 using CQRS.AspNet;
 using CQRS.AspNet.Example;
-using CQRS.Command.Abstractions;
-using CQRS.Query.Abstractions;
-using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,9 +18,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (app.Configuration.GetValue<bool>("UseCqrsEndpointsFromAssembly"))
+{
+    app.MapCqrsEndpoints(typeof(Program).Assembly);
+}
+else
+{
+    app.MapCqrsEndpoints();
+}
 
-//app.MapCqrsEndpoints();
+
 
 app.MapGet<SampleQuery>("/sample-query");
 
@@ -42,7 +46,7 @@ app.MapPatch<SampleCommand>("/sample-command/{id}");
 app.MapPut<SampleCommand>("/sample-command");
 app.MapPut<SampleCommand>("/sample-command/{id}");
 
-app.MapCqrsEndpoints();
+
 
 
 

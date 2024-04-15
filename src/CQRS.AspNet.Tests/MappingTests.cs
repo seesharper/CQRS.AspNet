@@ -14,7 +14,7 @@ public class MappingTests
         var factory = new TestApplication<Program>();
         var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/sample-query?name=John");
+        var response = await client.GetAsync("/sample-query?name=John&Age=30");
         var r = await response.Content.ReadAsStringAsync();
         var content = await response.Content.ReadFromJsonAsync<SampleQueryResult>();
 
@@ -33,7 +33,6 @@ public class MappingTests
         content!.Address.Should().Be("123 Main St.");
     }
 
-
     [Fact]
     public async Task ShouldHandleGetWithRouteAndQueryParameters()
     {
@@ -45,7 +44,6 @@ public class MappingTests
 
         content!.Address.Should().Be("123 Main St.");
     }
-
 
     [Fact]
     public async Task ShouldHandlePostWithBody()
@@ -76,7 +74,7 @@ public class MappingTests
         var commandHandlerMock = factory.MockCommandHandler<DeleteCommand>();
         var client = factory.CreateClient();
         await client.DeleteAsync("/delete-command/1");
-        commandHandlerMock.VerifyCommandHandler(c => c.id == 1, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
     }
 
     [Fact]
@@ -86,7 +84,7 @@ public class MappingTests
         var commandHandlerMock = factory.MockCommandHandler<DeleteCommand>();
         var client = factory.CreateClient();
         await client.DeleteAsync("/delete-command?id=1");
-        commandHandlerMock.VerifyCommandHandler(c => c.id == 1, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
     }
 
     [Fact]
@@ -128,5 +126,67 @@ public class MappingTests
         var client = factory.CreateClient();
         await client.PutAsJsonAsync("/sample-command/1", new SampleCommand(-1, "John", "123 Main St.", 30));
         commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.id == 1, Times.Once());
+    }
+
+    [Fact]
+    public async Task ShouldHandlePostWithAttribute()
+    {
+        var factory = new TestApplication<Program>();
+        var commandHandlerMock = factory.MockCommandHandler<CommandWithAttribute>();
+        var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/command-with-attribute", new CommandWithAttribute(1, "John", "123 Main St.", 30));
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
+    }
+
+    [Fact]
+    public async Task ShouldHandlePutWithAttribute()
+    {
+        var factory = new TestApplication<Program>();
+        var commandHandlerMock = factory.MockCommandHandler<CommandWithAttribute>();
+        var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/command-with-attribute/1", new CommandWithAttribute(-1, "John", "123 Main St.", 30));
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
+    }
+
+    [Fact]
+    public async Task ShouldHandlePatchWithAttribute()
+    {
+        var factory = new TestApplication<Program>();
+        var commandHandlerMock = factory.MockCommandHandler<CommandWithAttribute>();
+        var client = factory.CreateClient();
+        await client.PatchAsJsonAsync("/command-with-attribute/1", new CommandWithAttribute(-1, "John", "123 Main St.", 30));
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
+    }
+
+    [Fact]
+    public async Task ShouldHandleDeleteWithAttribute()
+    {
+        var factory = new TestApplication<Program>();
+        var commandHandlerMock = factory.MockCommandHandler<DeleteCommandWithAttribute>();
+        var client = factory.CreateClient();
+        await client.DeleteAsync("/delete-command-with-attribute/1");
+        commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
+    }
+
+    [Fact]
+    public async Task ShouldHandleGetWithAttribute()
+    {
+        var factory = new TestApplication<Program>();
+        var queryHandlerMock = factory.MockQueryHandler<QueryWithAttribute, QueryWithAttributeResult>();
+        queryHandlerMock.Setup(c => c.HandleAsync(It.IsAny<QueryWithAttribute>(), It.IsAny<CancellationToken>())).ReturnsAsync(new QueryWithAttributeResult("John", "123 Main St."));
+        var client = factory.CreateClient();
+        await client.GetAsync("/query-with-attribute/1");
+        queryHandlerMock.VerifyQueryHandler(c => c.Id == 1, Times.Once());
+    }
+
+    [Fact]
+    public async Task ShouldMapCqrsEndpointsFromGivenAssembly()
+    {
+        var factory = new TestApplication<Program>();
+        var queryHandlerMock = factory.MockQueryHandler<QueryWithAttribute, QueryWithAttributeResult>();
+        factory.WithConfiguration("UseCqrsEndpointsFromAssembly", "true");
+        var client = factory.CreateClient();
+        await client.GetAsync("/query-with-attribute/1");
+        queryHandlerMock.VerifyQueryHandler(c => c.Id == 1, Times.Once());
     }
 }

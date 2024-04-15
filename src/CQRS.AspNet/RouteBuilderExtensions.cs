@@ -35,10 +35,10 @@ public static class RouteBuilderExtensions
                     DeleteAttribute => MapDeleteMethod,
                     PatchAttribute => MapPatchMethod,
                     PutAttribute => MapPutMethod,
-                    _ => throw new InvalidOperationException("Invalid route attribute")
+                    _ => null
                 };
 
-                method.MakeGenericMethod(type).Invoke(null, [builder, routeAttribute.Route]);
+                method?.MakeGenericMethod(type).Invoke(null, [builder, routeAttribute.Route]);
             }
         }
         return builder;
