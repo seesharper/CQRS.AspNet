@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CQRS.AspNet;
 
+/// <summary>
+/// Extends the <see cref="IEndpointRouteBuilder"/> with methods to map commands and queries to routes.
+/// </summary>
 public static class RouteBuilderExtensions
 {
     private static readonly MethodInfo CreateTypedQueryDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -19,7 +22,12 @@ public static class RouteBuilderExtensions
     private static readonly MethodInfo MapPatchMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPatch), BindingFlags.Public | BindingFlags.Static)!;
     private static readonly MethodInfo MapPutMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPut), BindingFlags.Public | BindingFlags.Static)!;
 
-
+    /// <summary>
+    /// Maps command and queries that are decorated with <see cref="GetAttribute"/>, <see cref="PostAttribute"/>, <see cref="DeleteAttribute"/>, <see cref="PatchAttribute"/>, <see cref="PutAttribute"/> attributes.
+    /// </summary>
+    /// <param name="builder">The target <see cref="IEndpointRouteBuilder"/>.</param>
+    /// <param name="assembly">The <see cref="Assembly"/> for which to scan for commands and queries</param>
+    /// <returns>The <see cref="IEndpointRouteBuilder"/> for chaining calls. </returns>
     public static IEndpointRouteBuilder MapCqrsEndpoints(this IEndpointRouteBuilder builder, Assembly? assembly = null)
     {
         var allTypes = assembly?.GetTypes() ?? Assembly.GetCallingAssembly()!.GetTypes();
@@ -45,6 +53,13 @@ public static class RouteBuilderExtensions
         return builder;
     }
 
+    /// <summary>
+    /// Maps the given <typeparamref name="TQuery"/> to the specified GET route <paramref name="pattern"/>.
+    /// </summary>
+    /// <typeparam name="TQuery">The type of query to be mapped to a GET endpoint.</typeparam>
+    /// <param name="builder">The target <see cref="IEndpointRouteBuilder"/>.</param>
+    /// <param name="pattern">The route pattern.</param>
+    /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapGet<TQuery>(this IEndpointRouteBuilder builder, string pattern)
     {
         var openGenericExecuteAsyncMethod = typeof(IQueryExecutor).GetMethod(nameof(IQueryExecutor.ExecuteAsync))!;
@@ -57,6 +72,13 @@ public static class RouteBuilderExtensions
         return builder.MapGet(pattern, typedDelegate);
     }
 
+    /// <summary>
+    /// Maps the given <typeparamref name="TCommand"/> to the specified POST route <paramref name="pattern"/>.
+    /// </summary>
+    /// <typeparam name="TCommand">The type of command to be mapped to a POST endpoint.</typeparam>
+    /// <param name="builder">The target <see cref="IEndpointRouteBuilder"/>.</param>
+    /// <param name="pattern">The route pattern.</param>
+    /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPost<TCommand>(this IEndpointRouteBuilder builder, string pattern)
     {
         var openGenericExecuteAsyncMethod = typeof(ICommandExecutor).GetMethod(nameof(ICommandExecutor.ExecuteAsync))!;
@@ -79,6 +101,14 @@ public static class RouteBuilderExtensions
         }
     }
 
+
+    /// <summary>
+    /// Maps the given <typeparamref name="TCommand"/> to the specified DELETE route <paramref name="pattern"/>.
+    /// </summary>
+    /// <typeparam name="TCommand">The type of command to be mapped to a DELETE endpoint.</typeparam>
+    /// <param name="builder">The target <see cref="IEndpointRouteBuilder"/>.</param>
+    /// <param name="pattern">The route pattern.</param>
+    /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapDelete<TCommand>(this IEndpointRouteBuilder builder, string pattern)
     {
         var openGenericExecuteAsyncMethod = typeof(ICommandExecutor).GetMethod(nameof(ICommandExecutor.ExecuteAsync))!;
@@ -89,6 +119,13 @@ public static class RouteBuilderExtensions
         return builder.MapDelete(pattern, typedDelegate);
     }
 
+    /// <summary>
+    /// Maps the given <typeparamref name="TCommand"/> to the specified PATCH route <paramref name="pattern"/>.
+    /// </summary>
+    /// <typeparam name="TCommand">The type of command to be mapped to a PATCH endpoint.</typeparam>
+    /// <param name="builder">The target <see cref="IEndpointRouteBuilder"/>.</param>
+    /// <param name="pattern">The route pattern.</param>
+    /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPatch<TCommand>(this IEndpointRouteBuilder builder, string pattern)
     {
         var openGenericExecuteAsyncMethod = typeof(ICommandExecutor).GetMethod(nameof(ICommandExecutor.ExecuteAsync))!;
@@ -99,6 +136,13 @@ public static class RouteBuilderExtensions
         return builder.MapPatch(pattern, typedDelegate);
     }
 
+    /// <summary>
+    /// Maps the given <typeparamref name="TCommand"/> to the specified PUT route <paramref name="pattern"/>.
+    /// </summary>
+    /// <typeparam name="TCommand">The type of command to be mapped to a PUT endpoint.</typeparam>
+    /// <param name="builder">The target <see cref="IEndpointRouteBuilder"/>.</param>
+    /// <param name="pattern">The route pattern.</param>
+    /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPut<TCommand>(this IEndpointRouteBuilder builder, string pattern)
     {
         var openGenericExecuteAsyncMethod = typeof(ICommandExecutor).GetMethod(nameof(ICommandExecutor.ExecuteAsync))!;

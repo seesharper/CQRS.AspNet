@@ -1,10 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
+    <Authors>Bernhard Richter</Authors>
+    <Description>Allows commands and queries to be mapped as minimal API endpoints.</Description>
+    <RepositoryUrl>https://github.com/seesharper/CQRS.AspNet</RepositoryUrl>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>library</OutputType>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <RepositoryType>git</RepositoryType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CQRS.Command.Abstractions" Version="1.1.0" />

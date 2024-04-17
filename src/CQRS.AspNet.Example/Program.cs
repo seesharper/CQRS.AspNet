@@ -1,5 +1,6 @@
 using CQRS.AspNet;
 using CQRS.AspNet.Example;
+using CQRS.Query.Abstractions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,8 +26,6 @@ else
 {
     app.MapCqrsEndpoints();
 }
-
-
 
 app.MapGet<SampleQuery>("/sample-query");
 
