@@ -1,7 +1,9 @@
+using System.Net;
 using System.Net.Http.Json;
 using CQRS.AspNet.Example;
 using CQRS.AspNet.Testing;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Moq;
 
 namespace CQRS.AspNet.Tests;
@@ -188,5 +190,35 @@ public class MappingTests
         var client = factory.CreateClient();
         await client.GetAsync("/query-with-attribute/1");
         queryHandlerMock.VerifyQueryHandler(c => c.Id == 1, Times.Once());
+    }
+
+    [Fact]
+    public async Task ShouldHandleQueryWithTypedResults()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var response = await client.GetAsync("/query-with-typed-results/1");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response = await client.GetAsync("/query-with-typed-results/2");
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task ShouldHandleCommandWithTypedResults()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/command-with-result", new CommandWithResult(1));
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task ShouldThrowExceptionWhenCommandResultIsNotSet()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/command-without-setting-result", new CommandWithoutSettingResult(1));
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        var t = await response.Content.ReadAsStringAsync();
     }
 }

@@ -2,16 +2,17 @@
 using CQRS.AspNet.MetaData;
 using CQRS.Command.Abstractions;
 using CQRS.Query.Abstractions;
-using Microsoft.AspNetCore.Components.HtmlRendering.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CQRS.AspNet;
 
 public static class RouteBuilderExtensions
 {
-    private static readonly MethodInfo CreateTypedQueryDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegate), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
-    private static readonly MethodInfo CreateTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegate), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
-    private static readonly MethodInfo CreateTypedDeleteCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedDeleteCommandDelegate), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+    private static readonly MethodInfo CreateTypedQueryDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo CreateTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo CreateTypedDeleteCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedDeleteCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    private static readonly MethodInfo CreateTypedCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo MapGetMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapGet), BindingFlags.Public | BindingFlags.Static)!;
     private static readonly MethodInfo MapPostMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPost), BindingFlags.Public | BindingFlags.Static)!;
     private static readonly MethodInfo MapDeleteMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapDelete), BindingFlags.Public | BindingFlags.Static)!;
@@ -60,10 +61,22 @@ public static class RouteBuilderExtensions
     {
         var openGenericExecuteAsyncMethod = typeof(ICommandExecutor).GetMethod(nameof(ICommandExecutor.ExecuteAsync))!;
 
-        var createTypedDelegateMethod = CreateTypedCommandDelegateMethod.MakeGenericMethod(typeof(TCommand));
-        var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
+        // check if TCommand inherits from Command<IResult>
+        Type? baseType = typeof(TCommand).BaseType;
+        if (baseType != null && baseType.IsGenericType == true && baseType.GetGenericTypeDefinition() == typeof(Command<>))
+        {
+            var resultType = baseType.GetGenericArguments()[0];
+            var createTypedDelegateMethod = CreateTypedCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
+            var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
 
-        return builder.MapPost(pattern, typedDelegate);
+            return builder.MapPost(pattern, typedDelegate);
+        }
+        else
+        {
+            var createTypedDelegateMethod = CreateTypedCommandDelegateMethod.MakeGenericMethod(typeof(TCommand));
+            var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
+            return builder.MapPost(pattern, typedDelegate);
+        }
     }
 
     public static RouteHandlerBuilder MapDelete<TCommand>(this IEndpointRouteBuilder builder, string pattern)
@@ -98,22 +111,37 @@ public static class RouteBuilderExtensions
 
     private static Func<HttpRequest, ICommandExecutor, TCommand, Task> CreateTypedCommandDelegate<TCommand>()
     {
-        return (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand query) =>
+        return (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
         {
-            var routeValues = request.RouteValues;
-            if (routeValues.Count > 0)
+            MapRouteValues(request, command);
+            return commandExecutor.ExecuteAsync(command, CancellationToken.None);
+        };
+    }
+
+    private static Func<HttpRequest, ICommandExecutor, TCommand, Task<TResult>> CreateTypedCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult> where TResult : IResult
+    {
+        return (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
+        {
+            MapRouteValues(request, command);
+            commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            return Task.FromResult(command.GetResult()!);
+        };
+    }
+
+    private static void MapRouteValues<TCommand>(HttpRequest request, TCommand command)
+    {
+        var routeValues = request.RouteValues;
+        if (routeValues.Count > 0)
+        {
+            foreach (var routeValue in routeValues)
             {
-                foreach (var routeValue in routeValues)
+                var property = typeof(TCommand).GetProperty(routeValue.Key, BindingFlags.Public | BindingFlags.Instance);
+                if (property != null)
                 {
-                    var property = typeof(TCommand).GetProperty(routeValue.Key, BindingFlags.Public | BindingFlags.Instance);
-                    if (property != null)
-                    {
-                        property.SetValue(query, Convert.ChangeType(routeValue.Value, property.PropertyType));
-                    }
+                    property.SetValue(command, Convert.ChangeType(routeValue.Value, property.PropertyType));
                 }
             }
-            return commandExecutor.ExecuteAsync(query, CancellationToken.None);
-        };
+        }
     }
 
     private static Func<ICommandExecutor, TCommand, Task> CreateTypedDeleteCommandDelegate<TCommand>()

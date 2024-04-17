@@ -8,7 +8,6 @@ builder.Host.UseLightInject(sr => sr.RegisterFrom<CompositionRoot>());
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -46,12 +45,7 @@ app.MapPatch<SampleCommand>("/sample-command/{id}");
 app.MapPut<SampleCommand>("/sample-command");
 app.MapPut<SampleCommand>("/sample-command/{id}");
 
-
-
-
-
 app.Run();
-
 
 public partial class Program { }
 
