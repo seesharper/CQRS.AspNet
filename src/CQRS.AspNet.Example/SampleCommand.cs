@@ -7,16 +7,56 @@ namespace CQRS.AspNet.Example;
 
 public record SampleCommand(int id, string Name, string Address, int Age);
 
-[Post("/command-with-result")]
-public record CommandWithResult(int Id) : Command<Results<ProblemHttpResult, Created>>;
+[Post("/post-command-with-result")]
+public record PostCommandWithResult(int Id) : Command<Results<ProblemHttpResult, Created>>;
 
-public class CommandWithResultHandler : ICommandHandler<CommandWithResult>
+public class PostCommandWithResultHandler : ICommandHandler<PostCommandWithResult>
 {
-    public async Task HandleAsync(CommandWithResult command, CancellationToken cancellationToken = default)
+    public Task HandleAsync(PostCommandWithResult command, CancellationToken cancellationToken = default)
     {
         command.SetResult(TypedResults.Created());
+        return Task.CompletedTask;
     }
 }
+
+[Patch("/patch-command-with-result")]
+public record PatchCommandWithResult(int Id) : Command<Results<ProblemHttpResult, NoContent>>;
+
+public class PatchCommandWithResultHandler : ICommandHandler<PatchCommandWithResult>
+{
+    public Task HandleAsync(PatchCommandWithResult command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.NoContent());
+        return Task.CompletedTask;
+    }
+}
+
+[Put("/put-command-with-result")]
+public record PutCommandWithResult(int Id) : Command<Results<ProblemHttpResult, NoContent>>;
+
+public class PutCommandWithResultHandler : ICommandHandler<PutCommandWithResult>
+{
+    public Task HandleAsync(PutCommandWithResult command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.NoContent());
+        return Task.CompletedTask;
+    }
+}
+
+[Delete("/delete-command-with-result/{id}")]
+public record DeleteCommandWithResult(int Id) : Command<Results<ProblemHttpResult, Ok<DeleteCommandResult>>>;
+
+public class DeleteCommandWithResultHandler : ICommandHandler<DeleteCommandWithResult>
+{
+    public Task HandleAsync(DeleteCommandWithResult command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.Ok(new DeleteCommandResult(command.Id)));
+        return Task.CompletedTask;
+    }
+}
+
+public record DeleteCommandResult(int Id);
+
 
 [Post("/command-without-setting-result")]
 public record CommandWithoutSettingResult(int Id) : Command<Results<ProblemHttpResult, Created>>;

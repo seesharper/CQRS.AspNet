@@ -204,13 +204,41 @@ public class MappingTests
     }
 
     [Fact]
-    public async Task ShouldHandleCommandWithTypedResults()
+    public async Task ShouldPostWithTypedResults()
     {
         var factory = new TestApplication<Program>();
         var client = factory.CreateClient();
-        var response = await client.PostAsJsonAsync("/command-with-result", new CommandWithResult(1));
+        var response = await client.PostAsJsonAsync("/post-command-with-result", new PostCommandWithResult(1));
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
+
+    [Fact]
+    public async Task ShouldPatchWithTypedResults()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var response = await client.PatchAsJsonAsync("/patch-command-with-result", new PatchCommandWithResult(1));
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task ShouldPutWithTypedResults()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var response = await client.PutAsJsonAsync("/put-command-with-result", new PutCommandWithResult(1));
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task ShouldDeleteWithTypedResults()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var result = await client.DeleteFromJsonAsync<DeleteCommandResult>("/delete-command-with-result/1");
+        result!.Id.Should().Be(1);
+    }
+
 
     [Fact]
     public async Task ShouldThrowExceptionWhenCommandResultIsNotSet()
@@ -219,6 +247,5 @@ public class MappingTests
         var client = factory.CreateClient();
         var response = await client.PostAsJsonAsync("/command-without-setting-result", new CommandWithoutSettingResult(1));
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
-        var t = await response.Content.ReadAsStringAsync();
     }
 }
