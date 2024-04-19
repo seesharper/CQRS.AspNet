@@ -36,6 +36,15 @@ public class MappingTests
     }
 
     [Fact]
+    public void ShouldThrowExceptionWhenCommandIsUsedInGetEndpoint()
+    {
+        var factory = new TestApplication<Program>();
+        factory.WithConfiguration("MapGetEndpointWithCommand", "true");
+        Action act = () => factory.CreateClient();
+        act.Should().Throw<InvalidOperationException>().WithMessage("Type SampleCommand is not a query. Only queries can be used in get endpoints");
+    }
+
+    [Fact]
     public async Task ShouldHandleGetWithRouteAndQueryParameters()
     {
         var factory = new TestApplication<Program>();
@@ -108,7 +117,6 @@ public class MappingTests
         await client.PatchAsJsonAsync("/sample-command/1", new SampleCommand(-1, "John", "123 Main St.", 30));
         commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.id == 1, Times.Once());
     }
-
 
     [Fact]
     public async Task ShouldHandlePutWithBody()
@@ -238,7 +246,6 @@ public class MappingTests
         var result = await client.DeleteFromJsonAsync<DeleteCommandResult>("/delete-command-with-result/1");
         result!.Id.Should().Be(1);
     }
-
 
     [Fact]
     public async Task ShouldThrowExceptionWhenCommandResultIsNotSet()

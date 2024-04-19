@@ -27,6 +27,14 @@ else
     app.MapCqrsEndpoints();
 }
 
+if (app.Configuration.GetValue<bool>("MapGetEndpointWithCommand"))
+{
+    app.MapGet<SampleCommand>("sample-command"); ;
+}
+
+
+
+
 app.MapGet<SampleQuery>("/sample-query");
 
 app.MapGet<SampleQuery>("/sample-query/{name}/{age}");

@@ -64,7 +64,12 @@ public static class RouteBuilderExtensions
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapGet<TQuery>(this IEndpointRouteBuilder builder, string pattern)
     {
-        var queryInterface = typeof(TQuery).GetInterfaces().First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>));
+        //TODO throw exception if this is not a query
+        if (!typeof(TQuery).GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>)))
+        {
+            throw new InvalidOperationException($"Type {typeof(TQuery).Name} is not a query. Only queries can be used in get endpoints");
+        }
+        var queryInterface = typeof(TQuery).GetInterfaces().First(i => i.GetGenericTypeDefinition() == typeof(IQuery<>));
         var resultType = queryInterface.GetGenericArguments()[0];
 
         var createTypedDelegateMethod = CreateTypedQueryDelegateMethod.MakeGenericMethod(typeof(TQuery), resultType);
