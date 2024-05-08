@@ -154,30 +154,22 @@ public static class RouteBuilderExtensions
         return builder.MapDelete(pattern, (Delegate)GetCreateTypedDeleteDelegateMethod<TCommand>().Invoke(null, null)!);
     }
 
-    // var createTypedDelegateMethod = CreateTypedDeleteCommandDelegateMethod.MakeGenericMethod(typeof(TCommand));
-    // var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
-
-    // return builder.MapDelete(pattern, typedDelegate);
-
-
-
-
     private static Func<HttpRequest, ICommandExecutor, TCommand, Task> CreateTypedCommandDelegate<TCommand>()
     {
-        return (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
         {
             MapRouteValues(request, command);
-            return commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            await commandExecutor.ExecuteAsync(command, CancellationToken.None);
         };
     }
 
     private static Func<HttpRequest, ICommandExecutor, TCommand, Task<TResult>> CreateTypedCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult>
     {
-        return (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
         {
             MapRouteValues(request, command);
-            commandExecutor.ExecuteAsync(command, CancellationToken.None);
-            return Task.FromResult(command.GetResult()!);
+            await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            return command.GetResult()!;
         };
     }
 
@@ -199,24 +191,23 @@ public static class RouteBuilderExtensions
 
     private static Func<ICommandExecutor, TCommand, Task> CreateTypedDeleteCommandDelegate<TCommand>()
     {
-        return (ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
+        return async (ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
         {
-            return commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            await commandExecutor.ExecuteAsync(command, CancellationToken.None);
         };
     }
 
     private static Func<ICommandExecutor, TCommand, Task<TResult>> CreateTypedDeleteCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult>
     {
-        return (ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
+        return async (ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
         {
-            commandExecutor.ExecuteAsync(command, CancellationToken.None);
-            return Task.FromResult(command.GetResult()!);
+            await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            return command.GetResult()!;
         };
     }
 
-
     private static Func<IQueryExecutor, TQuery, Task<TResult>> CreateTypedQueryDelegate<TQuery, TResult>() where TQuery : IQuery<TResult>
     {
-        return (IQueryExecutor queryExecutor, [AsParameters] TQuery query) => queryExecutor.ExecuteAsync(query, CancellationToken.None);
+        return async (IQueryExecutor queryExecutor, [AsParameters] TQuery query) => await queryExecutor.ExecuteAsync(query, CancellationToken.None);
     }
 }
