@@ -255,4 +255,13 @@ public class MappingTests
         var response = await client.PostAsJsonAsync("/command-without-setting-result", new CommandWithoutSettingResult(1));
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
+
+    [Fact]
+    public async Task ShouldUseResultWhenInheritingFromCommand()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/command-inheriting-from-create-command", new CommandInheritingFromCreateCommand());
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
 }
