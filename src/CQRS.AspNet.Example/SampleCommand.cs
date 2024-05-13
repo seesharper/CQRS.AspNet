@@ -68,3 +68,17 @@ public class CommandWithoutSettingResultHandler : ICommandHandler<CommandWithout
         return Task.CompletedTask;
     }
 }
+
+public record CreateCommand : Command<Results<Created<int>, ProblemHttpResult>>;
+
+[Post("/command-inheriting-from-create-command")]
+public record CommandInheritingFromCreateCommand : CreateCommand;
+
+public class CommandInheritingFromCreateCommandHandler : ICommandHandler<CommandInheritingFromCreateCommand>
+{
+    public Task HandleAsync(CommandInheritingFromCreateCommand command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.Created("command-inheriting-from-create-command", 1));
+        return Task.CompletedTask;
+    }
+}

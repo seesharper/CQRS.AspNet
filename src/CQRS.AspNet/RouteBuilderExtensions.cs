@@ -92,10 +92,10 @@ public static class RouteBuilderExtensions
 
     private static MethodInfo GetCreateTypedDelegateMethod<TCommand>()
     {
-        Type? baseType = typeof(TCommand).BaseType;
-        if (baseType != null && baseType.IsGenericType == true && baseType.GetGenericTypeDefinition() == typeof(Command<>))
+        var commandType = GetCommandType(typeof(TCommand));
+        if (commandType != null)
         {
-            var resultType = baseType.GetGenericArguments()[0];
+            var resultType = commandType.GetGenericArguments()[0];
             return CreateTypedCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
         }
         else
@@ -106,10 +106,11 @@ public static class RouteBuilderExtensions
 
     private static MethodInfo GetCreateTypedDeleteDelegateMethod<TCommand>()
     {
-        Type? baseType = typeof(TCommand).BaseType;
-        if (baseType != null && baseType.IsGenericType == true && baseType.GetGenericTypeDefinition() == typeof(Command<>))
+        var commandType = GetCommandType(typeof(TCommand));
+
+        if (commandType != null)
         {
-            var resultType = baseType.GetGenericArguments()[0];
+            var resultType = commandType.GetGenericArguments()[0];
             return CreateTypedDeleteCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
         }
         else
@@ -117,6 +118,20 @@ public static class RouteBuilderExtensions
             return CreateTypedDeleteCommandDelegateMethod.MakeGenericMethod(typeof(TCommand));
         }
     }
+
+    private static Type? GetCommandType(Type type)
+    {
+        while (type.BaseType != null && type.BaseType != typeof(object))
+        {
+            if (type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(Command<>))
+            {
+                return type.BaseType;
+            }
+            type = type.BaseType;
+        }
+        return null;
+    }
+
 
     /// <summary>
     /// Maps the given <typeparamref name="TCommand"/> to the specified PATCH route <paramref name="pattern"/>.
