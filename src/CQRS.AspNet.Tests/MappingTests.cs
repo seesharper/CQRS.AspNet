@@ -65,7 +65,7 @@ public class MappingTests
 
         await client.PostAsJsonAsync("/sample-command", new SampleCommand(1, "John", "123 Main St.", 30));
 
-        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.id == 1, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class MappingTests
         var commandHandlerMock = factory.MockCommandHandler<SampleCommand>();
         var client = factory.CreateClient();
         await client.PostAsJsonAsync("/sample-command/1", new SampleCommand(-1, "John", "123 Main St.", 30));
-        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.id == 1, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class MappingTests
         var commandHandlerMock = factory.MockCommandHandler<SampleCommand>();
         var client = factory.CreateClient();
         await client.PatchAsJsonAsync("/sample-command", new SampleCommand(1, "John", "123 Main St.", 30));
-        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.id == 1, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class MappingTests
         var commandHandlerMock = factory.MockCommandHandler<SampleCommand>();
         var client = factory.CreateClient();
         await client.PatchAsJsonAsync("/sample-command/1", new SampleCommand(-1, "John", "123 Main St.", 30));
-        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.id == 1, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class MappingTests
         var commandHandlerMock = factory.MockCommandHandler<SampleCommand>();
         var client = factory.CreateClient();
         await client.PutAsJsonAsync("/sample-command", new SampleCommand(1, "John", "123 Main St.", 30));
-        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.id == 1, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public class MappingTests
         var commandHandlerMock = factory.MockCommandHandler<SampleCommand>();
         var client = factory.CreateClient();
         await client.PutAsJsonAsync("/sample-command/1", new SampleCommand(-1, "John", "123 Main St.", 30));
-        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.id == 1, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Address == "123 Main St." && c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
     }
 
     [Fact]
