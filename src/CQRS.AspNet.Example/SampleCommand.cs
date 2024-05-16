@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace CQRS.AspNet.Example;
 
-public record SampleCommand(int id, string Name, string Address, int Age);
+public record SampleCommand(int Id, string Name, string Address, int Age);
 
 [Post("/post-command-with-result")]
 public record PostCommandWithResult(int Id) : Command<Results<ProblemHttpResult, Created>>;

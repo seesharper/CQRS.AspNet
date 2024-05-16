@@ -195,7 +195,7 @@ public static class RouteBuilderExtensions
         {
             foreach (var routeValue in routeValues)
             {
-                var property = typeof(TCommand).GetProperty(routeValue.Key, BindingFlags.Public | BindingFlags.Instance);
+                var property = typeof(TCommand).GetProperty(routeValue.Key, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
                 if (property != null)
                 {
                     property.SetValue(command, Convert.ChangeType(routeValue.Value, property.PropertyType));
