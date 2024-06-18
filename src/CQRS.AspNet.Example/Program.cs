@@ -32,7 +32,7 @@ if (app.Configuration.GetValue<bool>("MapGetEndpointWithCommand"))
     app.MapGet<SampleCommand>("sample-command"); ;
 }
 
-
+//app.MapPost("query-as-post", (IQueryExecutor queryExecutor, QueryAsPost query) => queryExecutor.ExecuteAsync(query));
 
 
 app.MapGet<SampleQuery>("/sample-query");

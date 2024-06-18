@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using CQRS.AspNet.Example;
 using CQRS.AspNet.Testing;
 using FluentAssertions;
+using FluentAssertions.Specialized;
 using Microsoft.AspNetCore.Http;
 using Moq;
 
@@ -263,5 +264,14 @@ public class MappingTests
         var client = factory.CreateClient();
         var response = await client.PostAsJsonAsync("/command-inheriting-from-create-command", new CommandInheritingFromCreateCommand());
         response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task ShouldHandlePostWithQuery()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/query-as-post", new QueryAsPost("John", 30));
+        var test = await response.Content.ReadAsStringAsync();
     }
 }

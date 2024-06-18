@@ -82,3 +82,6 @@ public class CommandInheritingFromCreateCommandHandler : ICommandHandler<Command
         return Task.CompletedTask;
     }
 }
+
+
+

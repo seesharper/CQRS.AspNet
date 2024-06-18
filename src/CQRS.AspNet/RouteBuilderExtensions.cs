@@ -12,6 +12,7 @@ namespace CQRS.AspNet;
 public static class RouteBuilderExtensions
 {
     private static readonly MethodInfo CreateTypedQueryDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo CreateTypedQueryDelegateForPostMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegateForPost), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo CreateTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo CreateTypedDeleteCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedDeleteCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
 
@@ -79,15 +80,25 @@ public static class RouteBuilderExtensions
     }
 
     /// <summary>
-    /// Maps the given <typeparamref name="TCommand"/> to the specified POST route <paramref name="pattern"/>.
+    /// Maps the given <typeparamref name="TCommandOrQuery"/> to the specified POST route <paramref name="pattern"/>.
     /// </summary>
-    /// <typeparam name="TCommand">The type of command to be mapped to a POST endpoint.</typeparam>
+    /// <typeparam name="TCommandOrQuery">The type of command or query to be mapped to a POST endpoint.</typeparam>
     /// <param name="builder">The target <see cref="IEndpointRouteBuilder"/>.</param>
     /// <param name="pattern">The route pattern.</param>
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
-    public static RouteHandlerBuilder MapPost<TCommand>(this IEndpointRouteBuilder builder, string pattern)
+    public static RouteHandlerBuilder MapPost<TCommandOrQuery>(this IEndpointRouteBuilder builder, string pattern)
     {
-        return builder.MapPost(pattern, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
+        if (typeof(TCommandOrQuery).GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>)))
+        {
+            var queryInterface = typeof(TCommandOrQuery).GetInterfaces().First(i => i.GetGenericTypeDefinition() == typeof(IQuery<>));
+            var resultType = queryInterface.GetGenericArguments()[0];
+
+            var createTypedDelegateMethod = CreateTypedQueryDelegateForPostMethod.MakeGenericMethod(typeof(TCommandOrQuery), resultType);
+            var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
+            return builder.MapPost(pattern, typedDelegate);
+        }
+
+        return builder.MapPost(pattern, (Delegate)GetCreateTypedDelegateMethod<TCommandOrQuery>().Invoke(null, null)!);
     }
 
     private static MethodInfo GetCreateTypedDelegateMethod<TCommand>()
@@ -224,5 +235,10 @@ public static class RouteBuilderExtensions
     private static Func<IQueryExecutor, TQuery, Task<TResult>> CreateTypedQueryDelegate<TQuery, TResult>() where TQuery : IQuery<TResult>
     {
         return async (IQueryExecutor queryExecutor, [AsParameters] TQuery query) => await queryExecutor.ExecuteAsync(query, CancellationToken.None);
+    }
+
+    private static Func<IQueryExecutor, TQuery, Task<TResult>> CreateTypedQueryDelegateForPost<TQuery, TResult>() where TQuery : IQuery<TResult>
+    {
+        return async (IQueryExecutor queryExecutor, [FromBody] TQuery query) => await queryExecutor.ExecuteAsync(query, CancellationToken.None);
     }
 }
