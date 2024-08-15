@@ -1,6 +1,7 @@
 using CQRS.AspNet;
 using CQRS.AspNet.Example;
 using CQRS.Query.Abstractions;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,11 @@ if (app.Configuration.GetValue<bool>("MapGetEndpointWithCommand"))
 
 //app.MapPost("query-as-post", (IQueryExecutor queryExecutor, QueryAsPost query) => queryExecutor.ExecuteAsync(query));
 
+
+// app.MapPost("post-command-without-body/{id}", (IQueryExecutor queryExecutor, [AsParameters] PostCommandWithoutBody command) =>
+// {
+//     Console.WriteLine("");
+// });
 
 app.MapGet<SampleQuery>("/sample-query");
 

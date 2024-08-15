@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.Serialization;
 using CQRS.AspNet.MetaData;
 using CQRS.Command.Abstractions;
 using CQRS.Query.Abstractions;
@@ -184,6 +185,7 @@ public static class RouteBuilderExtensions
     {
         return async (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
         {
+            command ??= (TCommand)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(TCommand));
             MapRouteValues(request, command);
             await commandExecutor.ExecuteAsync(command, CancellationToken.None);
         };

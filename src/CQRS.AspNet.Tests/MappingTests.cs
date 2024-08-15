@@ -274,4 +274,14 @@ public class MappingTests
         var response = await client.PostAsJsonAsync("/query-as-post", new QueryAsPost("John", 30));
         var test = await response.Content.ReadAsStringAsync();
     }
+
+    [Fact]
+    public async Task ShouldHandlerPostWithoutBody()
+    {
+        var factory = new TestApplication<Program>();
+        var commandHandlerMock = factory.MockCommandHandler<PostCommandWithoutBody>();
+        var client = factory.CreateClient();
+        await client.PostAsync("/post-command-without-body/1", null);
+        commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
+    }
 }

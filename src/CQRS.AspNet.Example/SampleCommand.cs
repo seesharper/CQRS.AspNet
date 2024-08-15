@@ -84,4 +84,6 @@ public class CommandInheritingFromCreateCommandHandler : ICommandHandler<Command
 }
 
 
+[Post("/post-command-without-body/{Id}")]
+public record PostCommandWithoutBody(int Id);
 
