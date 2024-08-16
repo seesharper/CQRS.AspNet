@@ -284,4 +284,15 @@ public class MappingTests
         await client.PostAsync("/post-command-without-body/1", null);
         commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
     }
+
+
+     [Fact]
+    public async Task ShouldHandlerPostWithoutBodyWithResult()
+    {
+        var factory = new TestApplication<Program>();
+        var commandHandlerMock = factory.MockCommandHandler<PostCommandWithoutBodyWithResult>();
+        var client = factory.CreateClient();
+        await client.PostAsync("/post-command-without-body-with-result/1", null);
+        commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
+    }
 }

@@ -22,3 +22,6 @@ public class PutAttribute([StringSyntax("Route")] string route)
 
 public class PatchAttribute([StringSyntax("Route")] string route)
     : RouteBaseAttribute(route);
+
+[AttributeUsage(AttributeTargets.Class)]
+public class FromParameters : Attribute;

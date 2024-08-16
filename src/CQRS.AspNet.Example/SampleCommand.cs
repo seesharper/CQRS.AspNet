@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using CQRS.AspNet.MetaData;
 using CQRS.Command.Abstractions;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -85,5 +84,10 @@ public class CommandInheritingFromCreateCommandHandler : ICommandHandler<Command
 
 
 [Post("/post-command-without-body/{Id}")]
+[FromParameters]
 public record PostCommandWithoutBody(int Id);
 
+
+[FromParameters]
+[Post("/post-command-without-body-with-result/{Id}")]
+public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
