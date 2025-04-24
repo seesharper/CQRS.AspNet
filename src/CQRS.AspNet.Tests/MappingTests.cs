@@ -286,7 +286,7 @@ public class MappingTests
     }
 
 
-     [Fact]
+    [Fact]
     public async Task ShouldHandlerPostWithoutBodyWithResult()
     {
         var factory = new TestApplication<Program>();
@@ -294,5 +294,30 @@ public class MappingTests
         var client = factory.CreateClient();
         await client.PostAsync("/post-command-without-body-with-result/1", null);
         commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
+    }
+
+
+    [Fact]
+    public async Task ShouldHandlePostWithGuidParameter()
+    {
+        var factory = new TestApplication<Program>();
+        var commandHandlerMock = factory.MockCommandHandler<PostCommandWithGuidParameter>();
+        var client = factory.CreateClient();
+        var guid = Guid.NewGuid();
+        await client.PostAsJsonAsync($"/post-command-with-guid-parameter/{guid}", new { Value = "test" });
+        commandHandlerMock.VerifyCommandHandler(c => c.Id == guid, Times.Once());
+        commandHandlerMock.VerifyCommandHandler(c => c.Value == "test", Times.Once());
+    }
+
+
+    [Fact]
+    public async Task ShouldHandleQueryWithGuidRouteValue()
+    {
+        var factory = new TestApplication<Program>();
+        var queryHandlerMock = factory.MockQueryHandler<SampleQueryWithGuidRouteValue, SampleQueryResultWithGuidRouteValue>();
+        var client = factory.CreateClient();
+        var guid = Guid.NewGuid();
+        var response = await client.GetAsync($"/sample-query-with-guid-route-value/{guid}");
+        queryHandlerMock.VerifyQueryHandler(c => c.Id == guid, Times.Once());
     }
 }

@@ -25,3 +25,7 @@ public class QueryAsPostHandler : IQueryHandler<QueryAsPost, SampleQueryResult>
         return Task.FromResult(new SampleQueryResult(query.Name, "123 Main St."));
     }
 }
+
+[Get("sample-query-with-guid-route-value/{Id}")]
+public record SampleQueryWithGuidRouteValue(Guid Id) : IQuery<SampleQueryResultWithGuidRouteValue>;
+public record SampleQueryResultWithGuidRouteValue();
