@@ -230,9 +230,18 @@ public static class RouteBuilderExtensions
             foreach (var routeValue in routeValues)
             {
                 var property = typeof(TCommand).GetProperty(routeValue.Key, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
                 if (property != null)
                 {
-                    property.SetValue(command, Convert.ChangeType(routeValue.Value, property.PropertyType));
+                    if (property.PropertyType == typeof(Guid))
+                    {
+                        property.SetValue(command, Guid.Parse(routeValue.Value!.ToString()!));
+                    }
+                    else
+                    {
+                        property.SetValue(command, Convert.ChangeType(routeValue.Value, property.PropertyType));
+                    }
+
                 }
             }
         }

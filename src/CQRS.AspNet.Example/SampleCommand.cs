@@ -91,3 +91,7 @@ public record PostCommandWithoutBody(int Id);
 [FromParameters]
 [Post("/post-command-without-body-with-result/{Id}")]
 public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
+
+
+[Post("/post-command-with-guid-parameter/{Id}")]
+public record PostCommandWithGuidParameter(Guid Id, string Value) : Command<Results<ProblemHttpResult, Created<Guid>>>;
