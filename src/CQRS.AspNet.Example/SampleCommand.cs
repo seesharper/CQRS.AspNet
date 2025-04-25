@@ -95,11 +95,3 @@ public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
 
 [Post("/post-command-with-guid-parameter/{Id}")]
 public record PostCommandWithGuidParameter(Guid Id, string Value) : Command<Results<ProblemHttpResult, Created<Guid>>>;
-public class PostCommandWithGuidParameterHandler : ICommandHandler<PostCommandWithGuidParameter>
-{
-    public Task HandleAsync(PostCommandWithGuidParameter command, CancellationToken cancellationToken = default)
-    {
-        command.SetResult(TypedResults.Created("post-command-with-guid-parameter", command.Id));
-        return Task.CompletedTask;
-    }
-}

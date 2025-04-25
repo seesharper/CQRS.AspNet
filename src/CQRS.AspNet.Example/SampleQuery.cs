@@ -28,4 +28,12 @@ public class QueryAsPostHandler : IQueryHandler<QueryAsPost, SampleQueryResult>
 
 [Get("sample-query-with-guid-route-value/{Id}")]
 public record SampleQueryWithGuidRouteValue(Guid Id) : IQuery<SampleQueryResultWithGuidRouteValue>;
-public record SampleQueryResultWithGuidRouteValue();
+public record SampleQueryResultWithGuidRouteValue(Guid Id);
+
+public class SampleQueryWithGuidRouteValueHandler : IQueryHandler<SampleQueryWithGuidRouteValue, SampleQueryResultWithGuidRouteValue>
+{
+    public Task<SampleQueryResultWithGuidRouteValue> HandleAsync(SampleQueryWithGuidRouteValue query, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(new SampleQueryResultWithGuidRouteValue(query.Id));
+    }
+}

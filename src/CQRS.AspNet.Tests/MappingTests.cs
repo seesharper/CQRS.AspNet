@@ -314,10 +314,11 @@ public class MappingTests
     public async Task ShouldHandleQueryWithGuidRouteValue()
     {
         var factory = new TestApplication<Program>();
-        var queryHandlerMock = factory.MockQueryHandler<SampleQueryWithGuidRouteValue, SampleQueryResultWithGuidRouteValue>();
         var client = factory.CreateClient();
         var guid = Guid.NewGuid();
         var response = await client.GetAsync($"/sample-query-with-guid-route-value/{guid}");
-        queryHandlerMock.VerifyQueryHandler(c => c.Id == guid, Times.Once());
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadFromJsonAsync<SampleQueryResultWithGuidRouteValue>();
+        content!.Id.Should().Be(guid);
     }
 }
