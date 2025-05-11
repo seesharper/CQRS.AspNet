@@ -95,3 +95,12 @@ public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
 
 [Post("/post-command-with-guid-parameter/{Id}")]
 public record PostCommandWithGuidParameter(Guid Id, string Value) : Command<Results<ProblemHttpResult, Created<Guid>>>;
+
+[Post("api/sample-post-command/{Id}")]
+public record SamplePostCommand(int? Id, string Name, int Age = 20);
+
+[Post("api/sample-post-command-with-value-type/{Id}")]
+public record SamplePostCommandWithValueType(int Id, string Name, int Age = 20);
+
+[Post("api/sample-post-command-with-invalid-property/{Id}")]
+public record SamplePostCommandWithInvalidProperty(int CustomerId, string Name, int Age = 20);
