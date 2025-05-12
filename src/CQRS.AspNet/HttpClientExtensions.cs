@@ -114,4 +114,23 @@ public static class HttpClientExtensions
         httpRequest.Content = JsonContent.Create(command);
         return await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
     }
+
+    public async static Task Patch<TCommand>(this HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default) where TCommand : class
+    {
+        success ??= (response) => response.StatusCode == HttpStatusCode.NoContent;
+        var route = command.GetType().GetCustomAttribute<PatchAttribute>()!.Route;
+        var uri = PlaceholderReplacer.ReplacePlaceholders(route, command);
+        var httpRequest = new HttpRequestMessage(HttpMethod.Patch, uri);
+        httpRequest.Content = JsonContent.Create(command);
+        await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
+    }
+
+    public async static Task Delete<TCommand>(this HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default) where TCommand : class
+    {
+        success ??= (response) => response.StatusCode == HttpStatusCode.NoContent;
+        var route = command.GetType().GetCustomAttribute<DeleteAttribute>()!.Route;
+        var uri = PlaceholderReplacer.ReplacePlaceholders(route, command);
+        var httpRequest = new HttpRequestMessage(HttpMethod.Delete, uri);
+        await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
+    }
 }

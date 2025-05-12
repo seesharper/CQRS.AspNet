@@ -152,3 +152,28 @@ public class SamplePostCommandWithProblemHandler : ICommandHandler<SamplePostCom
         return Task.CompletedTask;
     }
 }
+
+
+[Patch("api/sample-patch-command/{Id}")]
+public record SamplePatchCommand(int Id) : PatchCommand;
+
+public class SamplePatchCommandHandler : ICommandHandler<SamplePatchCommand>
+{
+    public Task HandleAsync(SamplePatchCommand command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.NoContent());
+        return Task.CompletedTask;
+    }
+}
+
+[Delete("api/sample-delete-command-from-base/{Id}")]
+public record SampleDeleteCommandFromBase(int Id) : DeleteCommand;
+
+public class SampleDeleteCommandFromBaseHandler : ICommandHandler<SampleDeleteCommandFromBase>
+{
+    public Task HandleAsync(SampleDeleteCommandFromBase command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.NoContent());
+        return Task.CompletedTask;
+    }
+}

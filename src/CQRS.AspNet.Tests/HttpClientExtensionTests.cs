@@ -216,9 +216,9 @@ public class HttpClientExtensionTests
     public async Task ShouldHandlePostCommandWithValueType()
     {
         var factory = new TestApplication<Program>();
-        
+
         var client = factory.CreateClient();
-        await client.Post(new SamplePostCommandWithValueType(10, "Test McGee", 20));        
+        await client.Post(new SamplePostCommandWithValueType(10, "Test McGee", 20));
     }
 
 
@@ -271,6 +271,23 @@ public class HttpClientExtensionTests
        {
            await client.Post(new SamplePostCommand(null, "Test McGee", 20));
        });
+    }
+
+
+    [Fact]
+    public async Task ShouldHandlePatch()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        await client.Patch(new SamplePatchCommand(10));
+    }
+
+     [Fact]
+    public async Task ShouldHandleDelete()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        await client.Delete(new SampleDeleteCommandFromBase(10));
     }
 
     [Fact]
