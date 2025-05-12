@@ -2,4 +2,4 @@ using CQRS.Command.Abstractions;
 
 namespace CQRS.AspNet.Example;
 
-public record DeleteCommand(int Id);
+public record SampleDeleteCommand(int Id);

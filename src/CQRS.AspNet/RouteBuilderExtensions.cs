@@ -233,15 +233,7 @@ public static class RouteBuilderExtensions
 
                 if (property != null)
                 {
-                    if (property.PropertyType == typeof(Guid))
-                    {
-                        property.SetValue(command, Guid.Parse(routeValue.Value!.ToString()!));
-                    }
-                    else
-                    {
-                        property.SetValue(command, Convert.ChangeType(routeValue.Value, property.PropertyType));
-                    }
-
+                    property.SetValue(command, TypeConversionHelper.ConvertTo(routeValue.Value!.ToString()!, property.PropertyType));
                 }
             }
         }

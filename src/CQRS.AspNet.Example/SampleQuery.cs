@@ -37,3 +37,20 @@ public class SampleQueryWithGuidRouteValueHandler : IQueryHandler<SampleQueryWit
         return Task.FromResult(new SampleQueryResultWithGuidRouteValue(query.Id));
     }
 }
+
+
+[Get("sample-get-query-with-query-parameters")]
+public record SampleGetQueryWithQueryParameters(string Name, int Age = 20) : IQuery<SampleGetQueryWithQueryParametersResult>;
+
+public record SampleGetQueryWithQueryParametersResult(string Name, string Address);
+
+
+[Get("sample-get-query-with-route-values/{Name}/{Age}")]
+public record SampleGetQueryWithRouteValues(string? Name, int Age = 20) : IQuery<SampleGetQueryWithRouteValuesResult>;
+public record SampleGetQueryWithRouteValuesResult(string Name, string Address);
+
+
+[Get("sample-get-query-with-invalid-property/{Name}")]
+public record SampleGetQueryWithInvalidProperty(string CustomerName) : IQuery<SampleGetQueryWithInvalidPropertyResult>;
+
+public record SampleGetQueryWithInvalidPropertyResult(string CustomerName, string Address);
