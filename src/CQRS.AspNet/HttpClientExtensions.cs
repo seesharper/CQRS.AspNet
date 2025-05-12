@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -89,17 +90,28 @@ public static class HttpClientExtensions
         var uri = PlaceholderReplacer.ReplacePlaceholdersWithQueryParameters(route, query);
         var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri);
         var response = await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
-        return await response.Content.As<TResult>();
+        return await response.Content.As<TResult>(cancellationToken: cancellationToken);
     }
 
-    public static async Task Post<TCommand>(this HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default) where TCommand : class
+    public static async Task<TResult> Post<TResult>(this HttpClient client, PostCommand<TResult> command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default)
+
     {
-        // Get the uri from the PostAttribute found on TCommand
-        var route = typeof(TCommand).GetCustomAttribute<PostAttribute>()!.Route;
+        var response = await PostAndHandleResponse(client, command, success, cancellationToken);
+        return await response.Content.As<TResult>(cancellationToken: cancellationToken);
+    }
+
+    public static async Task<HttpResponseMessage> Post(this HttpClient client, PostCommand command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default)
+    {
+        return await PostAndHandleResponse(client, command, success, cancellationToken);
+    }
+
+    private static async Task<HttpResponseMessage> PostAndHandleResponse<TCommand>(HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success, CancellationToken cancellationToken) where TCommand : class
+    {
+        success ??= (response) => response.StatusCode == HttpStatusCode.Created;
+        var route = command.GetType().GetCustomAttribute<PostAttribute>()!.Route;
         var uri = PlaceholderReplacer.ReplacePlaceholders(route, command);
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri);
         httpRequest.Content = JsonContent.Create(command);
-        await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
+        return await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
     }
-
 }

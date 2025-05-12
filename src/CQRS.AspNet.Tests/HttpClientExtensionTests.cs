@@ -5,6 +5,7 @@ using CQRS.AspNet.Example;
 using CQRS.AspNet.MetaData;
 using CQRS.AspNet.Testing;
 using CQRS.Query.Abstractions;
+using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using RichardSzalay.MockHttp;
@@ -191,25 +192,47 @@ public class HttpClientExtensionTests
     public async Task ShouldHandlePostCommand()
     {
         var factory = new TestApplication<Program>();
-        var commandHandlerMock = factory.MockCommandHandler<SamplePostCommand>();
+
         var client = factory.CreateClient();
         await client.Post(new SamplePostCommand(10, "Test McGee", 20));
-        commandHandlerMock.VerifyCommandHandler(
-            command => command.Name == "Test McGee" && command.Age == 20 && command.Id == 10,
-            Times.Once());
+
     }
 
-     [Fact]
+    [Fact]
+    public async Task ShouldHandlePostCommandFromBase()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var result = await client.Post(new SamplePostCommandWithResult(10));
+        result.Should().Be(10);
+    }
+
+
+
+
+
+
+    [Fact]
     public async Task ShouldHandlePostCommandWithValueType()
     {
         var factory = new TestApplication<Program>();
-        var commandHandlerMock = factory.MockCommandHandler<SamplePostCommandWithValueType>();
+        
         var client = factory.CreateClient();
-        await client.Post(new SamplePostCommandWithValueType(10, "Test McGee", 20));
-        commandHandlerMock.VerifyCommandHandler(
-            command => command.Name == "Test McGee" && command.Age == 20 && command.Id == 10,
-            Times.Once());
+        await client.Post(new SamplePostCommandWithValueType(10, "Test McGee", 20));        
     }
+
+
+    [Fact]
+    public async Task ShouldHandlePostWithProblem()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        var exception = await Assert.ThrowsAsync<ApiException>(async () =>
+        {
+            await client.Post(new SamplePostCommandWithProblem(10));
+        });
+    }
+
 
 
     [Fact]

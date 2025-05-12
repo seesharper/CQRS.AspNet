@@ -49,8 +49,8 @@ app.MapGet<SampleQuery>("/sample-query/{name}");
 app.MapPost<SampleCommand>("/sample-command");
 app.MapPost<SampleCommand>("/sample-command/{id}");
 
-app.MapDelete<DeleteCommand>("/delete-command/{id}");
-app.MapDelete<DeleteCommand>("/delete-command");
+app.MapDelete<SampleDeleteCommand>("/delete-command/{id}");
+app.MapDelete<SampleDeleteCommand>("/delete-command");
 
 app.MapPatch<SampleCommand>("/sample-command");
 app.MapPatch<SampleCommand>("/sample-command/{id}");

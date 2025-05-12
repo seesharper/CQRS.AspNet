@@ -83,7 +83,7 @@ public class MappingTests
     public async Task ShouldHandleDeleteWithRouteParameters()
     {
         var factory = new TestApplication<Program>();
-        var commandHandlerMock = factory.MockCommandHandler<DeleteCommand>();
+        var commandHandlerMock = factory.MockCommandHandler<SampleDeleteCommand>();
         var client = factory.CreateClient();
         await client.DeleteAsync("/delete-command/1");
         commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
@@ -93,7 +93,7 @@ public class MappingTests
     public async Task ShouldHandleDeleteWithQueryParameters()
     {
         var factory = new TestApplication<Program>();
-        var commandHandlerMock = factory.MockCommandHandler<DeleteCommand>();
+        var commandHandlerMock = factory.MockCommandHandler<SampleDeleteCommand>();
         var client = factory.CreateClient();
         await client.DeleteAsync("/delete-command?id=1");
         commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());

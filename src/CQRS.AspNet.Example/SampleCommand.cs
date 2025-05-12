@@ -94,13 +94,61 @@ public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
 
 
 [Post("/post-command-with-guid-parameter/{Id}")]
-public record PostCommandWithGuidParameter(Guid Id, string Value) : Command<Results<ProblemHttpResult, Created<Guid>>>;
+public record PostCommandWithGuidParameter(Guid Id, string Value) : PostCommand<Guid>;
 
 [Post("api/sample-post-command/{Id}")]
-public record SamplePostCommand(int? Id, string Name, int Age = 20);
+public record SamplePostCommand(int? Id, string Name, int Age = 20) : PostCommand;
+
+public class SamplePostCommandHandler : ICommandHandler<SamplePostCommand>
+{
+    public Task HandleAsync(SamplePostCommand command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.Created());
+        return Task.CompletedTask;
+    }
+}
+
+
 
 [Post("api/sample-post-command-with-value-type/{Id}")]
-public record SamplePostCommandWithValueType(int Id, string Name, int Age = 20);
+public record SamplePostCommandWithValueType(int Id, string Name, int Age = 20) : PostCommand;
+
+public class SamplePostCommandWithValueTypeHandler : ICommandHandler<SamplePostCommandWithValueType>
+{
+    public Task HandleAsync(SamplePostCommandWithValueType command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.Created());
+        return Task.CompletedTask;
+    }
+}
+
+
+
 
 [Post("api/sample-post-command-with-invalid-property/{Id}")]
-public record SamplePostCommandWithInvalidProperty(int CustomerId, string Name, int Age = 20);
+public record SamplePostCommandWithInvalidProperty(int CustomerId, string Name, int Age = 20) : PostCommand;
+
+[Post("api/sample-post-command-with-result/{Id}")]
+public record SamplePostCommandWithResult(int Id) : PostCommand<int>;
+
+public class SamplePostCommandFromBaseHandler : ICommandHandler<SamplePostCommandWithResult>
+{
+    public Task HandleAsync(SamplePostCommandWithResult command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.Created("sample-post-command-from-base", command.Id));
+        return Task.CompletedTask;
+    }
+}
+
+[Post("api/sample-post-command-with-problem/{Id}")]
+public record SamplePostCommandWithProblem(int Id) : PostCommand;
+
+
+public class SamplePostCommandWithProblemHandler : ICommandHandler<SamplePostCommandWithProblem>
+{
+    public Task HandleAsync(SamplePostCommandWithProblem command, CancellationToken cancellationToken = default)
+    {
+        command.SetProblemResult("Sample problem detail", "Sample instance", 500, "Sample title", "Sample type");
+        return Task.CompletedTask;
+    }
+}
