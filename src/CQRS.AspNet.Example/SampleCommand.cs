@@ -177,3 +177,20 @@ public class SampleDeleteCommandFromBaseHandler : ICommandHandler<SampleDeleteCo
         return Task.CompletedTask;
     }
 }
+
+[Post("api/sample-post-command-with-body/{Id}")]
+public record SamplePostCommandWithBody(int Id, string Name, int Age = 20) : PostCommand
+{
+
+}
+
+public class SamplePostCommandWithBodyHandler : ICommandHandler<SamplePostCommandWithBody>
+{
+    public Task HandleAsync(SamplePostCommandWithBody command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.Created());
+        return Task.CompletedTask;
+    }
+}
+
+
