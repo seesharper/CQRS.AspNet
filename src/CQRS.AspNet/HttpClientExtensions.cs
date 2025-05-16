@@ -111,7 +111,7 @@ public static class HttpClientExtensions
         var route = command.GetType().GetCustomAttribute<PostAttribute>()!.Route;
         var uri = PlaceholderReplacer.ReplacePlaceholders(route, command);
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri);
-        httpRequest.Content = JsonContent.Create(command);
+        httpRequest.Content = JsonContent.Create(command, command.GetType());
         return await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
     }
 

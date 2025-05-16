@@ -110,6 +110,19 @@ public class MappingTests
     }
 
     [Fact]
+    public async Task ShouldHandlePostWithBodyUsingPost()
+    {
+        var factory = new TestApplication<Program>();
+
+        // var commandHandlerMock = factory.MockCommandHandler<SamplePostCommandWithBody>();
+        var client = factory.CreateClient();
+        await client.Post(new SamplePostCommandWithBody(1, "John", 30));
+        // commandHandlerMock.VerifyCommandHandler(c => c.Age == 30 && c.Name == "John" && c.Id == 1, Times.Once());
+    }
+
+
+
+    [Fact]
     public async Task ShouldHandlePatchWithRouteAndBody()
     {
         var factory = new TestApplication<Program>();
