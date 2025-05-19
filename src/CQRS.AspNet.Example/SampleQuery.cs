@@ -54,3 +54,8 @@ public record SampleGetQueryWithRouteValuesResult(string Name, string Address);
 public record SampleGetQueryWithInvalidProperty(string CustomerName) : IQuery<SampleGetQueryWithInvalidPropertyResult>;
 
 public record SampleGetQueryWithInvalidPropertyResult(string CustomerName, string Address);
+
+[Get("sample-query-with-date-time-query-parameter")]
+public record SampleQueryWithDateTimeQueryParameter(DateTime DateTime) : IQuery<SampleQueryWithDateTimeQueryParameterResult>;
+
+public record SampleQueryWithDateTimeQueryParameterResult();

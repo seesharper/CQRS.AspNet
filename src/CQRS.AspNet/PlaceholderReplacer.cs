@@ -2,6 +2,7 @@ namespace CQRS.AspNet;
 
 
 using System;
+using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -69,6 +70,18 @@ public static partial class PlaceholderReplacer
                 var value = property.GetValue(values);
                 if (value != null)
                 {
+                    if (value is DateTime dateTime)
+                    {
+                        value = dateTime.ToString("o"); // ISO 8601 format
+                    }
+                    // else if (value is Guid guid)
+                    // {
+                    //     value = guid.ToString();
+                    // }
+                    // else if (value is IEnumerable enumerable)
+                    // {
+                    //     value = string.Join(",", enumerable.Cast<object>().Select(v => v.ToString()));
+                    // }
                     queryParameters.Add($"{property.Name}={value}");
                 }
             }
