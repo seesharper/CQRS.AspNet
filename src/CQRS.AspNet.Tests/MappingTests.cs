@@ -204,6 +204,20 @@ public class MappingTests
     }
 
     [Fact]
+    public async Task ShouldHandleGetWithDateTimeQueryParameter()
+    {
+        DateTime dateTime = new DateTime(2023, 10, 1, 13, 40, 12);
+        var factory = new TestApplication<Program>();
+        var queryHandlerMock = factory.MockQueryHandler<SampleQueryWithDateTimeQueryParameter, SampleQueryWithDateTimeQueryParameterResult>();
+        queryHandlerMock.Setup(c => c.HandleAsync(It.IsAny<SampleQueryWithDateTimeQueryParameter>(), It.IsAny<CancellationToken>())).ReturnsAsync(new SampleQueryWithDateTimeQueryParameterResult());
+        var client = factory.CreateClient();
+        await client.Get(new SampleQueryWithDateTimeQueryParameter(dateTime));
+        queryHandlerMock.VerifyQueryHandler(c => c.DateTime == dateTime, Times.Once());
+    }
+
+
+
+    [Fact]
     public async Task ShouldMapCqrsEndpointsFromGivenAssembly()
     {
         var factory = new TestApplication<Program>();
