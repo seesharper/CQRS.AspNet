@@ -2,9 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using CQRS.AspNet.Example;
 using CQRS.AspNet.Testing;
+using CQRS.Query.Abstractions;
 using FluentAssertions;
 using FluentAssertions.Specialized;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace CQRS.AspNet.Tests;
@@ -347,5 +349,13 @@ public class MappingTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadFromJsonAsync<SampleQueryResultWithGuidRouteValue>();
         content!.Id.Should().Be(guid);
+    }
+
+    [Fact]
+    public async Task ShouldCallExternalApi()
+    {
+        var factory = new TestApplication<Program>();
+        var queryExecutor = factory.Services.GetRequiredService<IQueryExecutor>();
+        await queryExecutor.ExecuteAsync(new SampleExternalQuery());
     }
 }

@@ -10,6 +10,12 @@ builder.Host.UseLightInject(sr => sr.RegisterFrom<CompositionRoot>());
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient("RestfulClient", client =>
+{
+    client.BaseAddress = new Uri("https://api.restful-api.dev/");
+}).AddAsKeyed();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
