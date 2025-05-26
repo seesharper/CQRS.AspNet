@@ -25,8 +25,6 @@ public class SampleExternalQueryHandler([FromKeyedServices("RestfulClient")] Htt
 {
     public async Task<IEnumerable<Product>> HandleAsync(SampleExternalQuery query, CancellationToken cancellationToken)
     {
-        var test = typeof(LightInjectServiceProviderFactory).Assembly.Location;
-
-        return await httpClient.Get(query, cancellationToken: cancellationToken);
+        return await httpClient.Get(query, cancellationToken: cancellationToken);        
     }
 }

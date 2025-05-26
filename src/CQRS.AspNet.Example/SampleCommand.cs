@@ -194,3 +194,22 @@ public class SamplePostCommandWithBodyHandler : ICommandHandler<SamplePostComman
 }
 
 
+public interface IKeyedService
+{
+}
+
+public class KeyedService : IKeyedService
+{
+
+}
+
+
+
+
+
+
+
+public class AnotherKeyedService : IKeyedService
+{
+}
+

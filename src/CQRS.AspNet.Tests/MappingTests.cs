@@ -356,6 +356,9 @@ public class MappingTests
     {
         var factory = new TestApplication<Program>();
         var queryExecutor = factory.Services.GetRequiredService<IQueryExecutor>();
-        await queryExecutor.ExecuteAsync(new SampleExternalQuery());
+
+        var products = await queryExecutor.ExecuteAsync(new SampleExternalQuery());
+        products.Should().NotBeEmpty();
     }
 }
+

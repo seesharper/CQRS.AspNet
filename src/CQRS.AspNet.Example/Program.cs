@@ -13,7 +13,16 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient("RestfulClient", client =>
 {
     client.BaseAddress = new Uri("https://api.restful-api.dev/");
-}).AddAsKeyed();
+}).AddAsKeyed(lifetime: ServiceLifetime.Singleton);
+
+/*
+serviceCollection.AddKeyedScoped<IKeyedService, KeyedService>("KeyedService");
+        serviceCollection.AddKeyedScoped<IKeyedService, AnotherKeyedService>("AnotherKeyedService");
+        serviceCollection.AddScoped<IServiceWithKeyedService>(sp => new ServiceWithKeyedService(sp.GetKeyedService<IKeyedService>("AnotherKeyedService")));
+        */
+
+builder.Services.AddKeyedTransient<IKeyedService, CQRS.AspNet.Example.KeyedService>("KeyedService");
+builder.Services.AddKeyedTransient<IKeyedService, CQRS.AspNet.Example.AnotherKeyedService>("AnotherKeyedService");
 
 
 var app = builder.Build();
