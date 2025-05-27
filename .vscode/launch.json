@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/CQRS.AspNet.Example/bin/Debug/net8.0/CQRS.AspNet.Example.dll",
+            "program": "${workspaceFolder}/src/CQRS.AspNet.Example/bin/Debug/net9.0/CQRS.AspNet.Example.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/CQRS.AspNet.Example",
             "stopAtEntry": false,

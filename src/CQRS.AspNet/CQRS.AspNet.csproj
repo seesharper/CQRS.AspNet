@@ -14,10 +14,7 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CQRS.Command.Abstractions" Version="1.1.0" />
+    <PackageReference Include="CQRS.Command.Abstractions" Version="1.2.0" />
     <PackageReference Include="CQRS.Query.Abstractions" Version="1.0.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CQRS.AspNet.MetaData\CQRS.AspNet.MetaData.csproj" />
   </ItemGroup>
 </Project>
