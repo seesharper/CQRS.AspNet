@@ -18,13 +18,13 @@ public class ProductData
 }
 
 [Get("objects")]
-public record SampleExternalQuery : IQuery<IEnumerable<Product>>;
+internal record SampleExternalQuery : IQuery<IEnumerable<Product>>;
 
 
-public class SampleExternalQueryHandler([FromKeyedServices("RestfulClient")] HttpClient httpClient) : IQueryHandler<SampleExternalQuery, IEnumerable<Product>>
+internal class SampleExternalQueryHandler([FromKeyedServices("RestfulClient")] HttpClient httpClient) : IQueryHandler<SampleExternalQuery, IEnumerable<Product>>
 {
     public async Task<IEnumerable<Product>> HandleAsync(SampleExternalQuery query, CancellationToken cancellationToken)
     {
-        return await httpClient.Get(query, cancellationToken: cancellationToken);        
+        return await httpClient.Get(query, cancellationToken: cancellationToken);
     }
 }

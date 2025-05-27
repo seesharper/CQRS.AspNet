@@ -34,7 +34,7 @@ public static class RouteBuilderExtensions
     public static IEndpointRouteBuilder MapCqrsEndpoints(this IEndpointRouteBuilder builder, Assembly? assembly = null)
     {
         var allTypes = assembly?.GetTypes() ?? Assembly.GetCallingAssembly()!.GetTypes();
-        var typeWithRouteAttribute = allTypes.Where(t => t.GetCustomAttributes<RouteBaseAttribute>().Any());
+        var typeWithRouteAttribute = allTypes.Where(t => t.IsPublic && t.GetCustomAttributes<RouteBaseAttribute>().Any());
         foreach (var type in typeWithRouteAttribute)
         {
             var routeAttributes = type.GetCustomAttributes<RouteBaseAttribute>();
