@@ -11,7 +11,7 @@ public static class HttpResponseMessageExtensions
             var result = await response.ReadFromJsonAsync<T>(options, cancellationToken);
             if (result == null)
             {
-                string message = $"Unable to deserialize the content of the response into the specified type.{typeof(T)}";                                
+                string message = $"Unable to deserialize the content of the response into the specified type.{typeof(T)}";
                 throw new JsonException(message);
             }
             return result;
@@ -28,4 +28,7 @@ public static class HttpResponseMessageExtensions
             throw new JsonException(message, ex);
         }
     }
+
+    public static bool HasProblemDetails(this HttpResponseMessage response)
+        => response.Content.Headers.ContentType?.MediaType == "application/problem+json";
 }
