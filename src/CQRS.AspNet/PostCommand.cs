@@ -93,3 +93,15 @@ public class MyGetQueryHandler : IQueryHandler<MyQuery, Results<HttpResult<int>,
     }
 }
 
+public class Test
+{
+    public async Task TestMethod()
+    {
+        var client = new HttpClient();
+
+        var test = await client.Get(new MyQuery());
+
+        
+
+    }
+}
