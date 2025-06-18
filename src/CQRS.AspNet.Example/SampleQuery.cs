@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CQRS.AspNet.MetaData;
 using CQRS.Query.Abstractions;
 
@@ -59,3 +60,10 @@ public record SampleGetQueryWithInvalidPropertyResult(string CustomerName, strin
 public record SampleQueryWithDateTimeQueryParameter(DateTime DateTime) : IQuery<SampleQueryWithDateTimeQueryParameterResult>;
 
 public record SampleQueryWithDateTimeQueryParameterResult();
+
+
+[Get("sample-query-with-metadata/{CustomerName}", Description = "This is a sample query with metadata", Summary = "Sample Query with Metadata")]
+public record SampleQueryWithMetaData([Description("This is a description of the customer name ")] string CustomerName) : IQuery<SampleQueryWithMetaDataResult>;
+
+
+public record SampleQueryWithMetaDataResult(string CustomerName);

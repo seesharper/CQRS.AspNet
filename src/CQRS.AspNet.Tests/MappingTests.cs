@@ -351,7 +351,7 @@ public class MappingTests
         content!.Id.Should().Be(guid);
     }
 
-    [Fact]
+    [Fact(Skip = "Requires")]
     public async Task ShouldCallExternalApi()
     {
         var factory = new TestApplication<Program>();

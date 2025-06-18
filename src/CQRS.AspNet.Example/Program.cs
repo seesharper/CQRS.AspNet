@@ -56,7 +56,17 @@ if (app.Configuration.GetValue<bool>("MapGetEndpointWithCommand"))
 //     Console.WriteLine("");
 // });
 
+
+
+
 app.MapGet<SampleQuery>("/sample-query");
+
+
+app.MapPost("whatever" , async ([FromServices]IQueryExecutor queryExecutor, int Id, [FromBody]SampleQuery query) =>
+{
+    var result = await queryExecutor.ExecuteAsync(query);
+    return TypedResults.Ok(result);
+});
 
 app.MapGet<SampleQuery>("/sample-query/{name}/{age}");
 app.MapGet<SampleQuery>("/sample-query/{name}");

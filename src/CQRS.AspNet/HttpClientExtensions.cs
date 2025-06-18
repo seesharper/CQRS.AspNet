@@ -94,6 +94,18 @@ public static class HttpClientExtensions
         return await response.Content.As<TResult>(cancellationToken: cancellationToken);
     }
 
+
+    // Todo create an overload that provides the route 
+    public static async Task<TResult> Get<TResult>(this HttpClient client, GetQuery<TResult> query, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
+    {
+        var route = query.GetType().GetCustomAttribute<GetAttribute>()!.Route;
+        var uri = PlaceholderReplacer.ReplacePlaceholdersWithQueryParameters(route, query);
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri);
+        var response = await client.SendAndHandleResponse(httpRequest, success, errorHandler, cancellationToken);
+        return await response.Content.As<TResult>(cancellationToken: cancellationToken);
+    }
+
+
     public static async Task<TResult> Post<TResult>(this HttpClient client, PostCommand<TResult> command, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
 
     {

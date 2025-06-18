@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CQRS.AspNet.MetaData;
 using CQRS.Command.Abstractions;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -6,7 +7,7 @@ namespace CQRS.AspNet.Example;
 
 public record SampleCommand(int Id, string Name, string Address, int Age);
 
-[Post("/post-command-with-result")]
+[Post("/post-command-with-result", Description = "This command returns a Created result.")]
 public record PostCommandWithResult(int Id) : Command<Results<ProblemHttpResult, Created>>;
 
 public class PostCommandWithResultHandler : ICommandHandler<PostCommandWithResult>

@@ -6,6 +6,14 @@ namespace CQRS.AspNet.MetaData;
 public abstract class RouteBaseAttribute([StringSyntax("Route")] string route) : Attribute
 {
     public string Route { get; } = route;
+
+    public string Description { get; set; } = string.Empty;
+
+    public string Summary { get; set; } = string.Empty;
+
+
+
+    public RouteMetaData ToMetaData() => new(Route, Description, Summary);
 };
 
 public class GetAttribute([StringSyntax("Route")] string route)

@@ -19,11 +19,11 @@ public static class RouteBuilderExtensions
     private static readonly MethodInfo CreateTypedCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     private static readonly MethodInfo CreateTypedDeleteCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedDeleteCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
-    private static readonly MethodInfo MapGetMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapGet), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly MethodInfo MapPostMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPost), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly MethodInfo MapDeleteMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapDelete), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly MethodInfo MapPatchMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPatch), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly MethodInfo MapPutMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPut), BindingFlags.Public | BindingFlags.Static)!;
+    private static readonly MethodInfo MapGetMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapGetInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapPostMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPostInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapDeleteMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapDeleteInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapPatchMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPatchInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapPutMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPutInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     /// <summary>
     /// Maps command and queries that are decorated with <see cref="GetAttribute"/>, <see cref="PostAttribute"/>, <see cref="DeleteAttribute"/>, <see cref="PatchAttribute"/>, <see cref="PutAttribute"/> attributes.
@@ -37,6 +37,11 @@ public static class RouteBuilderExtensions
         var typeWithRouteAttribute = allTypes.Where(t => t.IsPublic && t.GetCustomAttributes<RouteBaseAttribute>().Any());
         foreach (var type in typeWithRouteAttribute)
         {
+            if (type.Name.Contains("SampleDeleteCommandFromBase"))
+            {
+
+            }
+            
             var routeAttributes = type.GetCustomAttributes<RouteBaseAttribute>();
             foreach (var routeAttribute in routeAttributes)
             {
@@ -50,7 +55,7 @@ public static class RouteBuilderExtensions
                     _ => null
                 };
 
-                method?.MakeGenericMethod(type).Invoke(null, [builder, routeAttribute.Route]);
+                method?.MakeGenericMethod(type).Invoke(null, [builder, routeAttribute.ToMetaData()]);
             }
         }
         return builder;
@@ -65,6 +70,40 @@ public static class RouteBuilderExtensions
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapGet<TQuery>(this IEndpointRouteBuilder builder, string pattern)
     {
+        return MapGetInternal<TQuery>(builder, new RouteMetaData(pattern));
+    }
+
+    /// <summary>
+    /// Maps the given <typeparamref name="TQuery"/> to the specified GET route <paramref name="pattern"/>.
+    /// </summary>
+    /// <typeparam name="TQuery">The type of query to be mapped to a GET endpoint.</typeparam>
+    /// <param name="builder">The target <see cref="IEndpointRouteBuilder"/>.</param>    
+    /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
+    public static RouteHandlerBuilder MapGet<TQuery>(this IEndpointRouteBuilder builder)
+    {
+        var getAttributes = typeof(TQuery).GetCustomAttributes<GetAttribute>();
+        if (!getAttributes.Any())
+        {
+            throw new InvalidOperationException($"Type {typeof(TQuery).Name} does not have a GetAttribute defined. Use MapGet<TQuery>(IEndpointRouteBuilder, string) to specify a route.");
+        }
+
+        RouteHandlerBuilder? routeHandlerBuilder = null;
+
+        foreach (var getAttribute in getAttributes)
+        {
+            var pattern = getAttribute.Route;
+            if (getAttribute.Description != null)
+            {
+                getAttribute.Description = string.Empty;
+            }
+            routeHandlerBuilder = MapGetInternal<TQuery>(builder, getAttribute.ToMetaData());
+        }
+
+        return routeHandlerBuilder!;
+    }
+
+    private static RouteHandlerBuilder MapGetInternal<TQuery>(IEndpointRouteBuilder builder, RouteMetaData metaData)
+    {
         //TODO throw exception if this is not a query
         if (!typeof(TQuery).GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>)))
         {
@@ -76,7 +115,8 @@ public static class RouteBuilderExtensions
         var createTypedDelegateMethod = CreateTypedQueryDelegateMethod.MakeGenericMethod(typeof(TQuery), resultType);
         var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
 
-        return builder.MapGet(pattern, typedDelegate);
+        return builder.MapGet(metaData.Route, typedDelegate).WithDescription(metaData.Description)
+            .WithSummary(metaData.Summary);
     }
 
     /// <summary>
@@ -88,6 +128,11 @@ public static class RouteBuilderExtensions
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPost<TCommandOrQuery>(this IEndpointRouteBuilder builder, string pattern)
     {
+        return MapPostInternal<TCommandOrQuery>(builder, new RouteMetaData(pattern));
+    }
+
+    private static RouteHandlerBuilder MapPostInternal<TCommandOrQuery>(IEndpointRouteBuilder builder, RouteMetaData metaData)
+    {
         if (typeof(TCommandOrQuery).GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>)))
         {
             var queryInterface = typeof(TCommandOrQuery).GetInterfaces().First(i => i.GetGenericTypeDefinition() == typeof(IQuery<>));
@@ -95,10 +140,10 @@ public static class RouteBuilderExtensions
 
             var createTypedDelegateMethod = CreateTypedQueryDelegateForPostMethod.MakeGenericMethod(typeof(TCommandOrQuery), resultType);
             var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
-            return builder.MapPost(pattern, typedDelegate);
+            return builder.MapPost(metaData.Route, typedDelegate);
         }
 
-        return builder.MapPost(pattern, (Delegate)GetCreateTypedDelegateMethod<TCommandOrQuery>().Invoke(null, null)!);
+        return builder.MapPost(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommandOrQuery>().Invoke(null, null)!);
     }
 
     private static MethodInfo GetCreateTypedDelegateMethod<TCommand>()
@@ -153,7 +198,12 @@ public static class RouteBuilderExtensions
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPatch<TCommand>(this IEndpointRouteBuilder builder, string pattern)
     {
-        return builder.MapPatch(pattern, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
+        return MapPatchInternal<TCommand>(builder, new RouteMetaData(pattern));
+    }
+
+    private static RouteHandlerBuilder MapPatchInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
+    {
+        return builder.MapPatch(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
     }
 
     /// <summary>
@@ -165,7 +215,12 @@ public static class RouteBuilderExtensions
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPut<TCommand>(this IEndpointRouteBuilder builder, string pattern)
     {
-        return builder.MapPut(pattern, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
+        return MapPutInternal<TCommand>(builder, new RouteMetaData(pattern));
+    }
+
+    private static RouteHandlerBuilder MapPutInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
+    {
+        return builder.MapPut(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
     }
 
     /// <summary>
@@ -177,7 +232,12 @@ public static class RouteBuilderExtensions
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapDelete<TCommand>(this IEndpointRouteBuilder builder, string pattern)
     {
-        return builder.MapDelete(pattern, (Delegate)GetCreateTypedDeleteDelegateMethod<TCommand>().Invoke(null, null)!);
+        return MapDeleteInternal<TCommand>(builder, new RouteMetaData(pattern));
+    }
+
+    private static RouteHandlerBuilder MapDeleteInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
+    {
+        return builder.MapDelete(metaData.Route, (Delegate)GetCreateTypedDeleteDelegateMethod<TCommand>().Invoke(null, null)!);
     }
 
     private static Func<HttpRequest, ICommandExecutor, TCommand, Task> CreateTypedCommandDelegate<TCommand>()
