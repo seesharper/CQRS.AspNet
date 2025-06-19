@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CQRS.AspNet;
 using CQRS.AspNet.Example;
 using CQRS.Query.Abstractions;
@@ -62,10 +63,9 @@ if (app.Configuration.GetValue<bool>("MapGetEndpointWithCommand"))
 app.MapGet<SampleQuery>("/sample-query");
 
 
-app.MapPost("whatever" , async ([FromServices]IQueryExecutor queryExecutor, int Id, [FromBody]SampleQuery query) =>
+app.MapPost("whatever", async ([AsParameters] SampleParameters parameters, [FromBody] SampleQuery query) =>
 {
-    var result = await queryExecutor.ExecuteAsync(query);
-    return TypedResults.Ok(result);
+    return TypedResults.Ok();
 });
 
 app.MapGet<SampleQuery>("/sample-query/{name}/{age}");
@@ -89,3 +89,4 @@ public partial class Program { }
 
 
 
+public record SampleParameters([Description("This is the name")]string Name, int Age);

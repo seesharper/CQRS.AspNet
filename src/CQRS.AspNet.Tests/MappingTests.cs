@@ -1,10 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using AwesomeAssertions;
 using CQRS.AspNet.Example;
 using CQRS.AspNet.Testing;
 using CQRS.Query.Abstractions;
-using FluentAssertions;
-using FluentAssertions.Specialized;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;

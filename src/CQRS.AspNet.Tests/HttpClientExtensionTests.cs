@@ -5,7 +5,7 @@ using CQRS.AspNet.Example;
 using CQRS.AspNet.MetaData;
 using CQRS.AspNet.Testing;
 using CQRS.Query.Abstractions;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.HttpSys;
 using Moq;

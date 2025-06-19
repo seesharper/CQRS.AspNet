@@ -14,6 +14,8 @@ public static class RouteBuilderExtensions
     private static readonly MethodInfo CreateTypedQueryDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo CreateTypedQueryDelegateForPostMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegateForPost), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo CreateTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    private static readonly MethodInfo CreateParameterizedTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateParameterizedTypedCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo CreateTypedDeleteCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedDeleteCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     private static readonly MethodInfo CreateTypedCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -37,11 +39,6 @@ public static class RouteBuilderExtensions
         var typeWithRouteAttribute = allTypes.Where(t => t.IsPublic && t.GetCustomAttributes<RouteBaseAttribute>().Any());
         foreach (var type in typeWithRouteAttribute)
         {
-            if (type.Name.Contains("SampleDeleteCommandFromBase"))
-            {
-
-            }
-            
             var routeAttributes = type.GetCustomAttributes<RouteBaseAttribute>();
             foreach (var routeAttribute in routeAttributes)
             {
@@ -143,8 +140,19 @@ public static class RouteBuilderExtensions
             return builder.MapPost(metaData.Route, typedDelegate);
         }
 
+
+
         return builder.MapPost(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommandOrQuery>().Invoke(null, null)!);
     }
+
+    private static Type CreateParameterType(RouteMetaData routeMetaData, Type commandType)
+    {
+        var routeParameters = RouteHelper.ExtractRouteParameters(routeMetaData.Route, commandType);
+
+        return null;
+    }
+
+
 
     private static MethodInfo GetCreateTypedDelegateMethod<TCommand>()
     {
@@ -240,6 +248,15 @@ public static class RouteBuilderExtensions
         return builder.MapDelete(metaData.Route, (Delegate)GetCreateTypedDeleteDelegateMethod<TCommand>().Invoke(null, null)!);
     }
 
+    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand, Task> CreateParameterizedTypedCommandDelegate<TCommand, TParameter>()
+    {
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand command) =>
+            {
+                MapRouteValues(request, command);
+                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            };
+    }
+
     private static Func<HttpRequest, ICommandExecutor, TCommand, Task> CreateTypedCommandDelegate<TCommand>()
     {
         if (typeof(TCommand).IsDefined(typeof(FromParameters)))
@@ -259,6 +276,11 @@ public static class RouteBuilderExtensions
             };
         }
     }
+
+    // private static Func<HttpRequest, ICommandExecutor, TCommand, Task<TResult>> CreateTypedCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult>
+    // {
+
+    // }
 
     private static Func<HttpRequest, ICommandExecutor, TCommand, Task<TResult>> CreateTypedCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult>
     {
