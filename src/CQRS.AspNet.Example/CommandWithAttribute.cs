@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CQRS.AspNet.MetaData;
 using CQRS.Query.Abstractions;
 
@@ -12,6 +13,6 @@ public record CommandWithAttribute(int Id, string Name, string Address, int Age)
 public record DeleteCommandWithAttribute(int Id);
 
 [Get("/query-with-attribute/{Id}")]
-public record QueryWithAttribute(int Id) : IQuery<QueryWithAttributeResult>;
+public record QueryWithAttribute([Description("This is the Id")] int Id) : IQuery<QueryWithAttributeResult>;
 
 public record QueryWithAttributeResult(string Name, string Address);

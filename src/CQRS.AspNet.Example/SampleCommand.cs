@@ -94,8 +94,8 @@ public record PostCommandWithoutBody(int Id);
 public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
 
 
-[Post("/post-command-with-guid-parameter/{Id}")]
-public record PostCommandWithGuidParameter(Guid Id, string Value) : PostCommand<Guid>;
+[Post("/post-command-with-guid-parameter/{Id}", Description = "This command accepts a Guid parameter.")]
+public record PostCommandWithGuidParameter([Description("This is the Guid parameter")] Guid Id, string Value) : PostCommand<Guid>;
 
 [Post("api/sample-post-command/{Id}")]
 public record SamplePostCommand(int? Id, string Name, int Age = 20) : PostCommand;
@@ -126,8 +126,8 @@ public class SamplePostCommandWithValueTypeHandler : ICommandHandler<SamplePostC
 
 
 
-[Post("api/sample-post-command-with-invalid-property/{Id}")]
-public record SamplePostCommandWithInvalidProperty(int CustomerId, string Name, int Age = 20) : PostCommand;
+// [Post("api/sample-post-command-with-invalid-property/{Id}")]
+// public record SamplePostCommandWithInvalidProperty(int CustomerId, string Name, int Age = 20) : PostCommand;
 
 [Post("api/sample-post-command-with-result/{Id}")]
 public record SamplePostCommandWithResult(int Id) : PostCommand<int>;

@@ -96,4 +96,68 @@ public class RouteHelperTests
 
         result.Should().BeEmpty();
     }
+
+    public record TestCommandWithParamAttributes(
+        [Description("The unique identifier")] Guid Id,
+        [Description("Optional value")] string? OptionalValue,
+        int Count,
+        bool IsActive
+    );
+
+    [Fact]
+    public void Should_extract_description_from_constructor_parameter()
+    {
+        var route = "/api/{Id}";
+        var result = RouteHelper.ExtractRouteParameters(route, typeof(TestCommandWithParamAttributes));
+
+        result.Should().HaveCount(1);
+        result[0].Should().BeEquivalentTo(new RouteParameterInfo(
+            "Id", typeof(Guid), "The unique identifier", false, null));
+    }
+
+    [Fact]
+    public void Should_extract_optional_parameter_from_constructor_parameter_with_description()
+    {
+        var route = "/api/{OptionalValue?}";
+        var result = RouteHelper.ExtractRouteParameters(route, typeof(TestCommandWithParamAttributes));
+
+        result.Should().HaveCount(1);
+        result[0].Should().BeEquivalentTo(new RouteParameterInfo(
+            "OptionalValue", typeof(string), "Optional value", true, null));
+    }
+
+    [Fact]
+    public void Should_extract_multiple_parameters_from_constructor_attributes()
+    {
+        var route = "/api/{Id:guid}/{Count}/{IsActive}";
+        var result = RouteHelper.ExtractRouteParameters(route, typeof(TestCommandWithParamAttributes));
+
+        result.Should().HaveCount(3);
+
+        result.Should().ContainEquivalentOf(new RouteParameterInfo(
+            "Id", typeof(Guid), "The unique identifier", false, "guid"));
+
+        result.Should().ContainEquivalentOf(new RouteParameterInfo(
+            "Count", typeof(int), string.Empty, false, null));
+
+        result.Should().ContainEquivalentOf(new RouteParameterInfo(
+            "IsActive", typeof(bool), string.Empty, false, null));
+    }
+
+    [Fact]
+    public void Should_prefer_property_attribute_over_constructor_attribute_if_both_exist()
+    {
+        // This record has both attributes defined
+        var result = RouteHelper.ExtractRouteParameters("/api/{Id}", typeof(CommandWithBothAttributes));
+
+        result.Should().ContainSingle()
+              .Which.Should().BeEquivalentTo(new RouteParameterInfo(
+                  "Id", typeof(Guid), "From property", false, null));
+    }
+
+    public record CommandWithBothAttributes(
+        [property: Description("From property")]
+        [Description("From constructor")]
+        Guid Id
+    );
 }

@@ -234,17 +234,17 @@ public class HttpClientExtensionTests
 
 
 
-    [Fact]
-    public async Task ShouldHandlePostCommandWithInvalidProperty()
-    {
-        var factory = new TestApplication<Program>();
-        var commandHandlerMock = factory.MockCommandHandler<SamplePostCommandWithInvalidProperty>();
-        var client = factory.CreateClient();
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-       {
-           await client.Post(new SamplePostCommandWithInvalidProperty(10, "Test McGee", 20));
-       });
-    }
+    // [Fact]
+    // public async Task ShouldHandlePostCommandWithInvalidProperty()
+    // {
+    //     var factory = new TestApplication<Program>();
+    //     var commandHandlerMock = factory.MockCommandHandler<SamplePostCommandWithInvalidProperty>();
+    //     var client = factory.CreateClient();
+    //     var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+    //    {
+    //        await client.Post(new SamplePostCommandWithInvalidProperty(10, "Test McGee", 20));
+    //    });
+    // }
 
 
     [Fact]

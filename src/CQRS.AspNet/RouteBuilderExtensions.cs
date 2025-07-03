@@ -16,6 +16,9 @@ public static class RouteBuilderExtensions
     private static readonly MethodInfo CreateTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     private static readonly MethodInfo CreateParameterizedTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateParameterizedTypedCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo CreateParameterizedTypedCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateParameterizedTypedCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+
     private static readonly MethodInfo CreateTypedDeleteCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedDeleteCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     private static readonly MethodInfo CreateTypedCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -140,26 +143,46 @@ public static class RouteBuilderExtensions
             return builder.MapPost(metaData.Route, typedDelegate);
         }
 
+        var parametersType = CreateParameterType(metaData, typeof(TCommandOrQuery));
+        var parameterizedTypedDelegateMethod = GetParameterizedTypedDelegateMethod(typeof(TCommandOrQuery), parametersType);
+        // var createParameterizedTypedDelegateMethod = CreateParameterizedTypedCommandDelegateMethod.MakeGenericMethod(typeof(TCommandOrQuery), parametersType);
+        return builder.MapPost(metaData.Route, (Delegate)parameterizedTypedDelegateMethod.Invoke(null, null)!)
+            .WithDescription(metaData.Description)
+            .WithSummary(metaData.Summary);
 
-
-        return builder.MapPost(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommandOrQuery>().Invoke(null, null)!);
+        // return builder.MapPost(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommandOrQuery>().Invoke(null, null)!);
     }
 
     private static Type CreateParameterType(RouteMetaData routeMetaData, Type commandType)
     {
         var routeParameters = RouteHelper.ExtractRouteParameters(routeMetaData.Route, commandType);
+        var parameterType = ParameterTypeBuilder.CreateParameterType($"{commandType.Name}Parameters", routeParameters);
+        return parameterType;
+    }
 
-        return null;
+
+    private static MethodInfo GetParameterizedTypedDelegateMethod(Type commandType, Type parametersType)
+    {
+        var genericCommandType = GetGenericCommandType(commandType);
+        if (genericCommandType != null)
+        {
+            var resultType = genericCommandType.GetGenericArguments()[0];
+            return CreateParameterizedTypedCommandDelegateWithResultMethod.MakeGenericMethod(commandType, parametersType, resultType);
+        }
+        else
+        {
+            return CreateParameterizedTypedCommandDelegateMethod.MakeGenericMethod(commandType, parametersType);
+        }
     }
 
 
 
     private static MethodInfo GetCreateTypedDelegateMethod<TCommand>()
     {
-        var commandType = GetCommandType(typeof(TCommand));
-        if (commandType != null)
+        var genericCommandType = GetGenericCommandType(typeof(TCommand));
+        if (genericCommandType != null)
         {
-            var resultType = commandType.GetGenericArguments()[0];
+            var resultType = genericCommandType.GetGenericArguments()[0];
             return CreateTypedCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
         }
         else
@@ -170,11 +193,11 @@ public static class RouteBuilderExtensions
 
     private static MethodInfo GetCreateTypedDeleteDelegateMethod<TCommand>()
     {
-        var commandType = GetCommandType(typeof(TCommand));
+        var genericCommandType = GetGenericCommandType(typeof(TCommand));
 
-        if (commandType != null)
+        if (genericCommandType != null)
         {
-            var resultType = commandType.GetGenericArguments()[0];
+            var resultType = genericCommandType.GetGenericArguments()[0];
             return CreateTypedDeleteCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
         }
         else
@@ -183,7 +206,7 @@ public static class RouteBuilderExtensions
         }
     }
 
-    private static Type? GetCommandType(Type type)
+    private static Type? GetGenericCommandType(Type type)
     {
         while (type.BaseType != null && type.BaseType != typeof(object))
         {
@@ -195,6 +218,29 @@ public static class RouteBuilderExtensions
         }
         return null;
     }
+    private static Type? GetReturnType(Type type)
+    {
+        // Check for IQuery<TResult> interface
+        var queryInterface = type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>));
+        if (queryInterface != null)
+        {
+            return queryInterface.GetGenericArguments()[0];
+        }
+
+        // Check for Command<T> in inheritance hierarchy
+        var currentType = type;
+        while (currentType.BaseType != null && currentType.BaseType != typeof(object))
+        {
+            if (currentType.BaseType.IsGenericType && currentType.BaseType.GetGenericTypeDefinition() == typeof(Command<>))
+            {
+                return currentType.BaseType.GetGenericArguments()[0];
+            }
+            currentType = currentType.BaseType;
+        }
+
+        return null;
+    }
+
 
 
     /// <summary>
@@ -254,6 +300,16 @@ public static class RouteBuilderExtensions
             {
                 MapRouteValues(request, command);
                 await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            };
+    }
+
+    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand, Task<TResult>> CreateParameterizedTypedCommandDelegateWithResult<TCommand, TParameter, TResult>() where TCommand : Command<TResult>
+    {
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand command) =>
+            {
+                MapRouteValues(request, command);
+                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+                return command.GetResult()!;
             };
     }
 

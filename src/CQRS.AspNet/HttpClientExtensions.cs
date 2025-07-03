@@ -106,11 +106,11 @@ public static class HttpClientExtensions
     }
 
 
-    public static async Task<TResult> Post<TResult>(this HttpClient client, PostCommand<TResult> command, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
-
+    public static async Task<TValue> Post<TValue>(this HttpClient client, PostCommand<TValue> command, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
     {
         var response = await PostAndHandleResponse(client, command, success, errorHandler, cancellationToken);
-        return await response.Content.As<TResult>(cancellationToken: cancellationToken);
+        var value = await response.Content.As<TValue>(cancellationToken: cancellationToken);
+        return value!;
     }
 
     public static async Task<HttpResponseMessage> Post(this HttpClient client, PostCommand command, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
@@ -120,7 +120,7 @@ public static class HttpClientExtensions
 
     private static async Task<HttpResponseMessage> PostAndHandleResponse<TCommand>(HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success, Func<HttpResponseMessage, Task>? errorHandler, CancellationToken cancellationToken) where TCommand : class
     {
-        success ??= (response) => response.StatusCode == HttpStatusCode.Created;
+        success ??= (response) => response.IsSuccessStatusCode;
         var route = command.GetType().GetCustomAttribute<PostAttribute>()!.Route;
         var uri = PlaceholderReplacer.ReplacePlaceholders(route, command);
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri);
