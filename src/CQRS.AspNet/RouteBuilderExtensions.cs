@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using CQRS.AspNet.MetaData;
 using CQRS.Command.Abstractions;
 using CQRS.Query.Abstractions;
@@ -294,20 +295,20 @@ public static class RouteBuilderExtensions
         return builder.MapDelete(metaData.Route, (Delegate)GetCreateTypedDeleteDelegateMethod<TCommand>().Invoke(null, null)!);
     }
 
-    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand, Task> CreateParameterizedTypedCommandDelegate<TCommand, TParameter>()
+    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand?, Task> CreateParameterizedTypedCommandDelegate<TCommand, TParameter>()
     {
-        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand command) =>
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand? command) =>
             {
-                MapRouteValues(request, command);
+                MapRouteValues(request, ref command);
                 await commandExecutor.ExecuteAsync(command, CancellationToken.None);
             };
     }
 
-    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand, Task<TResult>> CreateParameterizedTypedCommandDelegateWithResult<TCommand, TParameter, TResult>() where TCommand : Command<TResult>
+    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand?, Task<TResult>> CreateParameterizedTypedCommandDelegateWithResult<TCommand, TParameter, TResult>() where TCommand : Command<TResult>
     {
-        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand command) =>
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand? command) =>
             {
-                MapRouteValues(request, command);
+                MapRouteValues(request, ref command);
                 await commandExecutor.ExecuteAsync(command, CancellationToken.None);
                 return command.GetResult()!;
             };
@@ -319,7 +320,7 @@ public static class RouteBuilderExtensions
         {
             return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
             {
-                MapRouteValues(request, command);
+                MapRouteValues(request, ref command);
                 await commandExecutor.ExecuteAsync(command, CancellationToken.None);
             };
         }
@@ -327,7 +328,7 @@ public static class RouteBuilderExtensions
         {
             return async (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
             {
-                MapRouteValues(request, command);
+                MapRouteValues(request, ref command);
                 await commandExecutor.ExecuteAsync(command, CancellationToken.None);
             };
         }
@@ -344,7 +345,7 @@ public static class RouteBuilderExtensions
         {
             return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
             {
-                MapRouteValues(request, command);
+                MapRouteValues(request, ref command);
                 await commandExecutor.ExecuteAsync(command, CancellationToken.None);
                 return command.GetResult()!;
             };
@@ -353,15 +354,20 @@ public static class RouteBuilderExtensions
         {
             return async (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
             {
-                MapRouteValues(request, command);
+                MapRouteValues(request, ref command);
                 await commandExecutor.ExecuteAsync(command, CancellationToken.None);
                 return command.GetResult()!;
             };
         }
     }
 
-    private static void MapRouteValues<TCommand>(HttpRequest request, TCommand command)
+    private static void MapRouteValues<TCommand>(HttpRequest request, ref TCommand command)
     {
+        if (command == null)
+        {
+            command = (TCommand)RuntimeHelpers.GetUninitializedObject(typeof(TCommand));
+        }
+
         var routeValues = request.RouteValues;
         if (routeValues.Count > 0)
         {

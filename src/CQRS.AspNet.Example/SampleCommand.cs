@@ -94,6 +94,16 @@ public record PostCommandWithoutBody(int Id);
 public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
 
 
+public class PostCommandWithoutBodyWithResultHandler : ICommandHandler<PostCommandWithoutBodyWithResult>
+{
+    public Task HandleAsync(PostCommandWithoutBodyWithResult command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.Created("post-command-without-body-with-result", command.Id));
+        return Task.CompletedTask;
+    }
+}
+
+
 [Post("/post-command-with-guid-parameter/{Id}", Description = "This command accepts a Guid parameter.")]
 public record PostCommandWithGuidParameter([Description("This is the Guid parameter")] Guid Id, string Value) : PostCommand<Guid>;
 
