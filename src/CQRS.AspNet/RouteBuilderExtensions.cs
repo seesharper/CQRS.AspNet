@@ -146,12 +146,28 @@ public static class RouteBuilderExtensions
 
         var parametersType = CreateParameterType(metaData, typeof(TCommandOrQuery));
         var parameterizedTypedDelegateMethod = GetParameterizedTypedDelegateMethod(typeof(TCommandOrQuery), parametersType);
-        // var createParameterizedTypedDelegateMethod = CreateParameterizedTypedCommandDelegateMethod.MakeGenericMethod(typeof(TCommandOrQuery), parametersType);
-        return builder.MapPost(metaData.Route, (Delegate)parameterizedTypedDelegateMethod.Invoke(null, null)!)
-            .WithDescription(metaData.Description)
-            .WithSummary(metaData.Summary);
 
-        // return builder.MapPost(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommandOrQuery>().Invoke(null, null)!);
+        return builder.MapPost(metaData.Route, (Delegate)parameterizedTypedDelegateMethod.Invoke(null, null)!).WithMetadata(metaData);
+
+
+
+    }
+
+    private static RouteHandlerBuilder WithMetadata(this RouteHandlerBuilder builder, RouteMetaData metaData)
+    {
+        if (!string.IsNullOrEmpty(metaData.Description))
+        {
+            builder.WithDescription(metaData.Description);
+        }
+        if (!string.IsNullOrEmpty(metaData.Summary))
+        {
+            builder.WithSummary(metaData.Summary);
+        }
+        if (!string.IsNullOrEmpty(metaData.Name))
+        {
+            builder.WithName(metaData.Name);
+        }
+        return builder;
     }
 
     private static Type CreateParameterType(RouteMetaData routeMetaData, Type commandType)

@@ -91,7 +91,7 @@ public record PostCommandWithoutBody(int Id);
 
 [FromParameters]
 [Post("/post-command-without-body-with-result/{Id}")]
-public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
+public record PostCommandWithoutBodyWithResult(int Id) : PostCommand<int>;
 
 
 public class PostCommandWithoutBodyWithResultHandler : ICommandHandler<PostCommandWithoutBodyWithResult>
@@ -103,8 +103,9 @@ public class PostCommandWithoutBodyWithResultHandler : ICommandHandler<PostComma
     }
 }
 
+// PostReportCommand => PostReport[Command]
 
-[Post("/post-command-with-guid-parameter/{Id}", Description = "This command accepts a Guid parameter.")]
+[Post("/post-command-with-guid-parameter/{Id}", Description = "This command accepts a Guid parameter.", Name = "PostCommandWithGuidParameterId")]
 public record PostCommandWithGuidParameter([Description("This is the Guid parameter")] Guid Id, string Value) : PostCommand<Guid>;
 
 [Post("api/sample-post-command/{Id}")]

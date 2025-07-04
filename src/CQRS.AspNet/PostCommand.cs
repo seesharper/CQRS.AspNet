@@ -46,7 +46,7 @@ public class AnyResult<TValue> : IResult, IValueHttpResult, IValueHttpResult<TVa
 
 public record PostCommand : ProblemCommand<Created>;
 
-public record PostCommand<TValue> : ProblemCommand<Created<TValue>>;
+public record PostCommand<TValue> : ProblemCommand<AnyResult<TValue>>;
 
 public record PatchCommand : ProblemCommand<NoContent>;
 

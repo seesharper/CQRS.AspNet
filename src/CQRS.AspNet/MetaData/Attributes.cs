@@ -11,9 +11,9 @@ public abstract class RouteBaseAttribute([StringSyntax("Route")] string route) :
 
     public string Summary { get; set; } = string.Empty;
 
+    public string Name { get; set; } = string.Empty;
 
-
-    public RouteMetaData ToMetaData() => new(Route, Description, Summary);
+    public RouteMetaData ToMetaData() => new(Route, Description, Summary, Name);
 };
 
 public class GetAttribute([StringSyntax("Route")] string route)
