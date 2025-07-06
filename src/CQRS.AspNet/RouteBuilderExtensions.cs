@@ -116,8 +116,7 @@ public static class RouteBuilderExtensions
         var createTypedDelegateMethod = CreateTypedQueryDelegateMethod.MakeGenericMethod(typeof(TQuery), resultType);
         var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
 
-        return builder.MapGet(metaData.Route, typedDelegate).WithDescription(metaData.Description)
-            .WithSummary(metaData.Summary);
+        return builder.MapGet(metaData.Route, typedDelegate).WithMetadata(metaData);
     }
 
     /// <summary>
@@ -180,11 +179,10 @@ public static class RouteBuilderExtensions
 
     private static MethodInfo GetParameterizedTypedDelegateMethod(Type commandType, Type parametersType)
     {
-        var genericCommandType = GetGenericCommandType(commandType);
-        if (genericCommandType != null)
+        var returnType = GetReturnType(commandType);
+        if (returnType != null)
         {
-            var resultType = genericCommandType.GetGenericArguments()[0];
-            return CreateParameterizedTypedCommandDelegateWithResultMethod.MakeGenericMethod(commandType, parametersType, resultType);
+            return CreateParameterizedTypedCommandDelegateWithResultMethod.MakeGenericMethod(commandType, parametersType, returnType);
         }
         else
         {
@@ -196,11 +194,11 @@ public static class RouteBuilderExtensions
 
     private static MethodInfo GetCreateTypedDelegateMethod<TCommand>()
     {
-        var genericCommandType = GetGenericCommandType(typeof(TCommand));
-        if (genericCommandType != null)
+        var returnType = GetReturnType(typeof(TCommand));
+        if (returnType != null)
         {
-            var resultType = genericCommandType.GetGenericArguments()[0];
-            return CreateTypedCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
+
+            return CreateTypedCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), returnType);
         }
         else
         {
@@ -210,12 +208,11 @@ public static class RouteBuilderExtensions
 
     private static MethodInfo GetCreateTypedDeleteDelegateMethod<TCommand>()
     {
-        var genericCommandType = GetGenericCommandType(typeof(TCommand));
+        var returnType = GetReturnType(typeof(TCommand));
 
-        if (genericCommandType != null)
+        if (returnType != null)
         {
-            var resultType = genericCommandType.GetGenericArguments()[0];
-            return CreateTypedDeleteCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
+            return CreateTypedDeleteCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), returnType);
         }
         else
         {
@@ -223,18 +220,6 @@ public static class RouteBuilderExtensions
         }
     }
 
-    private static Type? GetGenericCommandType(Type type)
-    {
-        while (type.BaseType != null && type.BaseType != typeof(object))
-        {
-            if (type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(Command<>))
-            {
-                return type.BaseType;
-            }
-            type = type.BaseType;
-        }
-        return null;
-    }
     private static Type? GetReturnType(Type type)
     {
         // Check for IQuery<TResult> interface
@@ -349,11 +334,6 @@ public static class RouteBuilderExtensions
             };
         }
     }
-
-    // private static Func<HttpRequest, ICommandExecutor, TCommand, Task<TResult>> CreateTypedCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult>
-    // {
-
-    // }
 
     private static Func<HttpRequest, ICommandExecutor, TCommand, Task<TResult>> CreateTypedCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult>
     {
