@@ -56,17 +56,6 @@ public record DeleteCommand : ProblemCommand<IResult>;
 
 public record GetQuery<TValue> : IQuery<Results<Ok<TValue>, ProblemHttpResult>>;
 
-public record PostCommand2<TValue> : ProblemCommand<IResult>
-{
-
-}
-
-// public record PostCommand3<TValue> : ProblemCommand<IResult>, IValueHttpResult
-// {
-
-// }
-
-
 public record PostCustomer : PostCommand<int>;
 
 public class PostCustomerHandler : ICommandHandler<PostCustomer>
@@ -95,15 +84,6 @@ public class PostCustomerHandler : ICommandHandler<PostCustomer>
 }
 
 
-
-public class Test
-{
-    public void somemethod()
-    {
-
-    }
-}
-
 /// <summary>
 /// Extension methods to enable direct assignment of IValueHttpResult types to commands.
 /// </summary>
@@ -113,43 +93,31 @@ public static class ProblemCommandExtensions
     /// Sets the result for a ProblemCommand that expects AnyResult&lt;TValue&gt;.
     /// </summary>
     public static void SetResult<TValue>(this ProblemCommand<AnyResult<TValue>> command, Created<TValue> result)
-    {
-        command.SetResult((AnyResult<TValue>)result);
-    }
+        => command.SetResult((AnyResult<TValue>)result);
 
     /// <summary>
     /// Sets the result for a ProblemCommand that expects AnyResult&lt;TValue&gt;.
     /// </summary>
     public static void SetResult<TValue>(this ProblemCommand<AnyResult<TValue>> command, Ok<TValue> result)
-    {
-        command.SetResult((AnyResult<TValue>)result);
-    }
+        => command.SetResult((AnyResult<TValue>)result);
 
     /// <summary>
     /// Sets the result for a ProblemCommand that expects AnyResult&lt;TValue&gt;.
     /// </summary>
     public static void SetResult<TValue>(this ProblemCommand<AnyResult<TValue>> command, Accepted<TValue> result)
-    {
-        command.SetResult((AnyResult<TValue>)result);
-    }
+        => command.SetResult((AnyResult<TValue>)result);
 
     /// <summary>
     /// Sets the result for a ProblemCommand that expects AnyResult&lt;TValue&gt;.
     /// </summary>
     public static void SetResult<TValue>(this ProblemCommand<AnyResult<TValue>> command, CreatedAtRoute<TValue> result)
-    {
-        command.SetResult((AnyResult<TValue>)result);
-    }
+        => command.SetResult((AnyResult<TValue>)result);
 
     /// <summary>
     /// Sets the result for a ProblemCommand that expects AnyResult&lt;TValue&gt;.
     /// </summary>
     public static void SetResult<TValue>(this ProblemCommand<AnyResult<TValue>> command, AcceptedAtRoute<TValue> result)
-    {
-        command.SetResult((AnyResult<TValue>)result);
-    }
-
-    // Add more overloads as needed for other IValueHttpResult<TValue> implementations
+        => command.SetResult((AnyResult<TValue>)result);
 }
 
 

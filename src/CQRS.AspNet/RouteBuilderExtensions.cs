@@ -145,11 +145,7 @@ public static class RouteBuilderExtensions
 
         var parametersType = CreateParameterType(metaData, typeof(TCommandOrQuery));
         var parameterizedTypedDelegateMethod = GetParameterizedTypedDelegateMethod(typeof(TCommandOrQuery), parametersType);
-
         return builder.MapPost(metaData.Route, (Delegate)parameterizedTypedDelegateMethod.Invoke(null, null)!).WithMetadata(metaData);
-
-
-
     }
 
     private static RouteHandlerBuilder WithMetadata(this RouteHandlerBuilder builder, RouteMetaData metaData)
@@ -259,7 +255,9 @@ public static class RouteBuilderExtensions
 
     private static RouteHandlerBuilder MapPatchInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
     {
-        return builder.MapPatch(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
+        var parametersType = CreateParameterType(metaData, typeof(TCommand));
+        var parameterizedTypedDelegateMethod = GetParameterizedTypedDelegateMethod(typeof(TCommand), parametersType);
+        return builder.MapPatch(metaData.Route, (Delegate)parameterizedTypedDelegateMethod.Invoke(null, null)!).WithMetadata(metaData);
     }
 
     /// <summary>
