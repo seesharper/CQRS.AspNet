@@ -44,13 +44,13 @@ public class AnyResult<TValue> : IResult, IValueHttpResult, IValueHttpResult<TVa
     // Add more implicit operators as needed for other IValueHttpResult<TValue> implementations
 }
 
-public record PostCommand : ProblemCommand<Created>;
+public record PostCommand : ProblemCommand<IResult>;
 
 public record PostCommand<TValue> : ProblemCommand<AnyResult<TValue>>;
 
-public record PatchCommand : ProblemCommand<NoContent>;
+public record PatchCommand : ProblemCommand<IResult>;
 
-public record DeleteCommand : ProblemCommand<NoContent>;
+public record DeleteCommand : ProblemCommand<IResult>;
 
 public record GetQuery<TValue> : IQuery<Results<Ok<TValue>, ProblemHttpResult>>;
 
