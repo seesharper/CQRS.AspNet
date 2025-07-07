@@ -58,31 +58,6 @@ public record GetQuery<TValue> : IQuery<Results<Ok<TValue>, ProblemHttpResult>>;
 
 public record PostCustomer : PostCommand<int>;
 
-public class PostCustomerHandler : ICommandHandler<PostCustomer>
-{
-    public Task HandleAsync(PostCustomer command, CancellationToken cancellationToken = default)
-    {
-        // Option 1: Explicitly create AnyResult first
-        AnyResult<int> result = TypedResults.Ok(42);
-        //command.SetResult(result);
-
-        // Option 2: Direct assignment now works with extension methods!
-        //command.SetResult(TypedResults.Ok(42));
-
-        // Option 3: Cast explicitly if needed
-        // command.SetResult((AnyResult<int>)TypedResults.Ok(42));
-
-        // All of these now work with the added operators:
-        // command.SetResult(TypedResults.Created($"/customers/{42}", 42));
-        // command.SetResult(TypedResults.Ok(42));
-        // command.SetResult(TypedResults.Accepted($"/customers/{42}", 42));
-        // command.SetResult(TypedResults.CreatedAtRoute("GetCustomer", new { id = 42 }, 42));
-        // command.SetResult(TypedResults.AcceptedAtRoute("GetCustomer", new { id = 42 }, 42));
-
-        throw new NotImplementedException();
-    }
-}
-
 
 /// <summary>
 /// Extension methods to enable direct assignment of IValueHttpResult types to commands.
