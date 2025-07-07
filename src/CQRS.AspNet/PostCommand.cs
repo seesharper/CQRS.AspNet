@@ -40,6 +40,8 @@ public class AnyResult<TValue> : IResult, IValueHttpResult, IValueHttpResult<TVa
     public static implicit operator AnyResult<TValue>(Created<TValue> created) => new(created);
     public static implicit operator AnyResult<TValue>(Ok<TValue> ok) => new(ok);
     public static implicit operator AnyResult<TValue>(Accepted<TValue> accepted) => new(accepted);
+    public static implicit operator AnyResult<TValue>(CreatedAtRoute<TValue> createdAtRoute) => new(createdAtRoute);
+    public static implicit operator AnyResult<TValue>(AcceptedAtRoute<TValue> acceptedAtRoute) => new(acceptedAtRoute);
 
     // Add more implicit operators as needed for other IValueHttpResult<TValue> implementations
 }
@@ -81,9 +83,12 @@ public class PostCustomerHandler : ICommandHandler<PostCustomer>
         // Option 3: Cast explicitly if needed
         // command.SetResult((AnyResult<int>)TypedResults.Ok(42));
 
-        // All of these now work:
+        // All of these now work with the added operators:
         // command.SetResult(TypedResults.Created($"/customers/{42}", 42));
+        // command.SetResult(TypedResults.Ok(42));
         // command.SetResult(TypedResults.Accepted($"/customers/{42}", 42));
+        // command.SetResult(TypedResults.CreatedAtRoute("GetCustomer", new { id = 42 }, 42));
+        // command.SetResult(TypedResults.AcceptedAtRoute("GetCustomer", new { id = 42 }, 42));
 
         throw new NotImplementedException();
     }
@@ -124,6 +129,22 @@ public static class ProblemCommandExtensions
     /// Sets the result for a ProblemCommand that expects AnyResult&lt;TValue&gt;.
     /// </summary>
     public static void SetResult<TValue>(this ProblemCommand<AnyResult<TValue>> command, Accepted<TValue> result)
+    {
+        command.SetResult((AnyResult<TValue>)result);
+    }
+
+    /// <summary>
+    /// Sets the result for a ProblemCommand that expects AnyResult&lt;TValue&gt;.
+    /// </summary>
+    public static void SetResult<TValue>(this ProblemCommand<AnyResult<TValue>> command, CreatedAtRoute<TValue> result)
+    {
+        command.SetResult((AnyResult<TValue>)result);
+    }
+
+    /// <summary>
+    /// Sets the result for a ProblemCommand that expects AnyResult&lt;TValue&gt;.
+    /// </summary>
+    public static void SetResult<TValue>(this ProblemCommand<AnyResult<TValue>> command, AcceptedAtRoute<TValue> result)
     {
         command.SetResult((AnyResult<TValue>)result);
     }
