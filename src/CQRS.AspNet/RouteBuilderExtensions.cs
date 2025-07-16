@@ -112,10 +112,9 @@ public static class RouteBuilderExtensions
 
         return builder.MapPost(metaData.Route, CreateParameterizedTypedDelegate(typeof(TCommandOrQuery), metaData)).WithMetadata(metaData);
     }
-
     private static Type CreateParameterType(RouteMetaData routeMetaData, Type commandType)
     {
-        var routeParameters = RouteHelper.ExtractRouteParameters(routeMetaData.Route, commandType);
+        var routeParameters = ParameterHelper.ExtractRouteParameters(routeMetaData.Route, commandType);
         var parameterType = ParameterTypeBuilder.CreateParameterType($"{commandType.Name}Parameters", routeParameters);
         return parameterType;
     }
@@ -225,7 +224,7 @@ public static class RouteBuilderExtensions
         => MapPutInternal<TCommand>(builder, new RouteMetaData(pattern));
 
     private static RouteHandlerBuilder MapPutInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
-        => builder.MapPut(metaData.Route, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
+        => builder.MapPut(metaData.Route, CreateParameterizedTypedDelegate(typeof(TCommand), metaData)).WithMetadata(metaData);
 
     /// <summary>
     /// Maps the given <typeparamref name="TCommand"/> to the specified DELETE route <paramref name="pattern"/>.
@@ -241,27 +240,11 @@ public static class RouteBuilderExtensions
 
     private static RouteHandlerBuilder MapDeleteInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
     {
-        return builder.MapDelete(metaData.Route, (Delegate)GetCreateTypedDeleteDelegateMethod<TCommand>().Invoke(null, null)!);
+        return builder.MapDelete(metaData.Route, CreateParameterizedTypedDelegate(typeof(TCommand), metaData)).WithMetadata(metaData);
+        // return builder.MapDelete(metaData.Route, (Delegate)GetCreateTypedDeleteDelegateMethod<TCommand>().Invoke(null, null)!);
     }
 
-    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand?, Task> CreateParameterizedTypedCommandDelegate<TCommand, TParameter>()
-    {
-        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand? command) =>
-            {
-                MapRouteValues(request, ref command);
-                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
-            };
-    }
 
-    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand?, Task<TResult>> CreateParameterizedTypedCommandDelegateWithResult<TCommand, TParameter, TResult>() where TCommand : Command<TResult>
-    {
-        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand? command) =>
-            {
-                MapRouteValues(request, ref command);
-                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
-                return command.GetResult()!;
-            };
-    }
 
     private static Func<HttpRequest, ICommandExecutor, TCommand, Task> CreateTypedCommandDelegate<TCommand>()
     {
@@ -304,7 +287,6 @@ public static class RouteBuilderExtensions
             };
         }
     }
-
     private static void MapRouteValues<TCommand>(HttpRequest request, ref TCommand command)
     {
         if (command == null)
@@ -312,6 +294,7 @@ public static class RouteBuilderExtensions
             command = (TCommand)RuntimeHelpers.GetUninitializedObject(typeof(TCommand));
         }
 
+        // Handle route values (from URL path like /api/{id})
         var routeValues = request.RouteValues;
         if (routeValues.Count > 0)
         {
@@ -322,6 +305,26 @@ public static class RouteBuilderExtensions
                 if (property != null)
                 {
                     property.SetValue(command, TypeConversionHelper.ConvertTo(routeValue.Value!.ToString()!, property.PropertyType));
+                }
+            }
+        }
+
+        // Handle query parameters (from URL query string like ?id=1&name=test)
+        var queryParameters = request.Query;
+        if (queryParameters.Count > 0)
+        {
+            foreach (var queryParam in queryParameters)
+            {
+                var property = typeof(TCommand).GetProperty(queryParam.Key, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
+                if (property != null && queryParam.Value.Count > 0)
+                {
+                    // Use the first value if multiple values are provided for the same parameter
+                    var value = queryParam.Value.First();
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        property.SetValue(command, TypeConversionHelper.ConvertTo(value, property.PropertyType));
+                    }
                 }
             }
         }
@@ -343,6 +346,26 @@ public static class RouteBuilderExtensions
             return command.GetResult()!;
         };
     }
+
+    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand?, Task> CreateParameterizedTypedCommandDelegate<TCommand, TParameter>()
+    {
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand? command) =>
+            {
+                MapRouteValues(request, ref command);
+                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            };
+    }
+
+    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand?, Task<TResult>> CreateParameterizedTypedCommandDelegateWithResult<TCommand, TParameter, TResult>() where TCommand : Command<TResult>
+    {
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand? command) =>
+            {
+                MapRouteValues(request, ref command);
+                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+                return command.GetResult()!;
+            };
+    }
+
 
     private static Func<IQueryExecutor, TQuery, Task<TResult>> CreateTypedQueryDelegate<TQuery, TResult>() where TQuery : IQuery<TResult>
     {

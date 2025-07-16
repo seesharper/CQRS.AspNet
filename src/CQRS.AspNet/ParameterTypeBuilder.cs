@@ -15,7 +15,7 @@ public static class ParameterTypeBuilder
     private static readonly ModuleBuilder ModuleBuilder =
         AssemblyBuilder.DefineDynamicModule("DynamicParameterModule");
 
-    public static Type CreateParameterType(string typeName, List<RouteParameterInfo> parameters)
+    public static Type CreateParameterType(string typeName, List<ParameterInfo> parameters)
     {
         if (string.IsNullOrWhiteSpace(typeName))
             throw new ArgumentException("Type name must be provided.", nameof(typeName));
@@ -51,7 +51,7 @@ public static class ParameterTypeBuilder
     }
 
 
-    private static void AddPropertyWithAttributes(TypeBuilder typeBuilder, RouteParameterInfo param)
+    private static void AddPropertyWithAttributes(TypeBuilder typeBuilder, ParameterInfo param)
     {
         string name = param.Name;
         Type type = param.Type;
@@ -62,8 +62,8 @@ public static class ParameterTypeBuilder
         var propertyBuilder = typeBuilder.DefineProperty(name, PropertyAttributes.HasDefault, type, null);
 
         if (!String.IsNullOrWhiteSpace(description))
-        { 
-            
+        {
+
         }
 
         // [Description("...")]
