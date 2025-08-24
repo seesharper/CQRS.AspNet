@@ -1,10 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using AwesomeAssertions;
 using CQRS.AspNet.Example;
 using CQRS.AspNet.Testing;
 using CQRS.Query.Abstractions;
-using FluentAssertions;
-using FluentAssertions.Specialized;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -305,7 +304,7 @@ public class MappingTests
     }
 
     [Fact]
-    public async Task ShouldHandlerPostWithoutBody()
+    public async Task ShouldHandlePostWithoutBody()
     {
         var factory = new TestApplication<Program>();
         var commandHandlerMock = factory.MockCommandHandler<PostCommandWithoutBody>();
@@ -319,10 +318,21 @@ public class MappingTests
     public async Task ShouldHandlerPostWithoutBodyWithResult()
     {
         var factory = new TestApplication<Program>();
-        var commandHandlerMock = factory.MockCommandHandler<PostCommandWithoutBodyWithResult>();
+        //var commandHandlerMock = factory.MockCommandHandler<PostCommandWithoutBodyWithResult>();
         var client = factory.CreateClient();
-        await client.PostAsync("/post-command-without-body-with-result/1", null);
-        commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
+        var response = await client.PostAsync("/post-command-without-body-with-result/1", null);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var content = await response.Content.As<int>();
+        content.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ShouldHandlerPostWithoutBodyWithResult2()
+    {
+        var factory = new TestApplication<Program>();
+        var client = factory.CreateClient();
+        await client.PostAsync("/testing/John/30", null);
+        // commandHandlerMock.VerifyCommandHandler(c => c.Id == 1, Times.Once());
     }
 
 
@@ -351,7 +361,7 @@ public class MappingTests
         content!.Id.Should().Be(guid);
     }
 
-    [Fact]
+    [Fact(Skip = "Requires")]
     public async Task ShouldCallExternalApi()
     {
         var factory = new TestApplication<Program>();

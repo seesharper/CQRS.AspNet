@@ -1,5 +1,7 @@
+using System.ComponentModel;
 using CQRS.AspNet;
 using CQRS.AspNet.Example;
+using CQRS.Command.Abstractions;
 using CQRS.Query.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -56,10 +58,25 @@ if (app.Configuration.GetValue<bool>("MapGetEndpointWithCommand"))
 //     Console.WriteLine("");
 // });
 
+
+
+
 app.MapGet<SampleQuery>("/sample-query");
+
+
+app.MapPost("whatever", async ([AsParameters] SampleParameters parameters, [FromBody] SampleQuery query) =>
+{
+    return TypedResults.Ok();
+});
 
 app.MapGet<SampleQuery>("/sample-query/{name}/{age}");
 app.MapGet<SampleQuery>("/sample-query/{name}");
+
+app.MapPost("testing/{name}/{age}", async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] SampleParameters parameters, [FromBody] PostCommandWithoutBody command) =>
+{
+    //return TypedResults.Ok(42);
+});
+
 
 app.MapPost<SampleCommand>("/sample-command");
 app.MapPost<SampleCommand>("/sample-command/{id}");
@@ -79,3 +96,4 @@ public partial class Program { }
 
 
 
+public record SampleParameters([Description("This is the name")] string Name, int Age);

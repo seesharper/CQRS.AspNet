@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CQRS.AspNet.MetaData;
 using CQRS.Command.Abstractions;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -6,7 +7,7 @@ namespace CQRS.AspNet.Example;
 
 public record SampleCommand(int Id, string Name, string Address, int Age);
 
-[Post("/post-command-with-result")]
+[Post("/post-command-with-result", Description = "This command returns a Created result.")]
 public record PostCommandWithResult(int Id) : Command<Results<ProblemHttpResult, Created>>;
 
 public class PostCommandWithResultHandler : ICommandHandler<PostCommandWithResult>
@@ -90,11 +91,22 @@ public record PostCommandWithoutBody(int Id);
 
 [FromParameters]
 [Post("/post-command-without-body-with-result/{Id}")]
-public record PostCommandWithoutBodyWithResult(int Id) : CreateCommand;
+public record PostCommandWithoutBodyWithResult(int Id) : PostCommand<int>;
 
 
-[Post("/post-command-with-guid-parameter/{Id}")]
-public record PostCommandWithGuidParameter(Guid Id, string Value) : PostCommand<Guid>;
+public class PostCommandWithoutBodyWithResultHandler : ICommandHandler<PostCommandWithoutBodyWithResult>
+{
+    public Task HandleAsync(PostCommandWithoutBodyWithResult command, CancellationToken cancellationToken = default)
+    {
+        command.SetResult(TypedResults.Created("post-command-without-body-with-result", command.Id));
+        return Task.CompletedTask;
+    }
+}
+
+// PostReportCommand => PostReport[Command]
+
+[Post("/post-command-with-guid-parameter/{Id}", Description = "This command accepts a Guid parameter.", Name = "PostCommandWithGuidParameterId")]
+public record PostCommandWithGuidParameter([Description("This is the Guid parameter")] Guid Id, string Value) : PostCommand<Guid>;
 
 [Post("api/sample-post-command/{Id}")]
 public record SamplePostCommand(int? Id, string Name, int Age = 20) : PostCommand;
@@ -125,8 +137,8 @@ public class SamplePostCommandWithValueTypeHandler : ICommandHandler<SamplePostC
 
 
 
-[Post("api/sample-post-command-with-invalid-property/{Id}")]
-public record SamplePostCommandWithInvalidProperty(int CustomerId, string Name, int Age = 20) : PostCommand;
+// [Post("api/sample-post-command-with-invalid-property/{Id}")]
+// public record SamplePostCommandWithInvalidProperty(int CustomerId, string Name, int Age = 20) : PostCommand;
 
 [Post("api/sample-post-command-with-result/{Id}")]
 public record SamplePostCommandWithResult(int Id) : PostCommand<int>;

@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using CQRS.AspNet.MetaData;
 using CQRS.Command.Abstractions;
 using CQRS.Query.Abstractions;
@@ -13,17 +14,13 @@ public static class RouteBuilderExtensions
 {
     private static readonly MethodInfo CreateTypedQueryDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo CreateTypedQueryDelegateForPostMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedQueryDelegateForPost), BindingFlags.NonPublic | BindingFlags.Static)!;
-    private static readonly MethodInfo CreateTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
-    private static readonly MethodInfo CreateTypedDeleteCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedDeleteCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
-
-    private static readonly MethodInfo CreateTypedCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
-
-    private static readonly MethodInfo CreateTypedDeleteCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateTypedDeleteCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
-    private static readonly MethodInfo MapGetMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapGet), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly MethodInfo MapPostMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPost), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly MethodInfo MapDeleteMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapDelete), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly MethodInfo MapPatchMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPatch), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly MethodInfo MapPutMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPut), BindingFlags.Public | BindingFlags.Static)!;
+    private static readonly MethodInfo CreateParameterizedTypedCommandDelegateMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateParameterizedTypedCommandDelegate), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo CreateParameterizedTypedCommandDelegateWithResultMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(CreateParameterizedTypedCommandDelegateWithResult), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapGetMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapGetInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapPostMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPostInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapDeleteMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapDeleteInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapPatchMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPatchInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly MethodInfo MapPutMethod = typeof(RouteBuilderExtensions).GetMethod(nameof(MapPutInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     /// <summary>
     /// Maps command and queries that are decorated with <see cref="GetAttribute"/>, <see cref="PostAttribute"/>, <see cref="DeleteAttribute"/>, <see cref="PatchAttribute"/>, <see cref="PutAttribute"/> attributes.
@@ -50,7 +47,7 @@ public static class RouteBuilderExtensions
                     _ => null
                 };
 
-                method?.MakeGenericMethod(type).Invoke(null, [builder, routeAttribute.Route]);
+                method?.MakeGenericMethod(type).Invoke(null, [builder, routeAttribute.ToMetaData()]);
             }
         }
         return builder;
@@ -64,8 +61,10 @@ public static class RouteBuilderExtensions
     /// <param name="pattern">The route pattern.</param>
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapGet<TQuery>(this IEndpointRouteBuilder builder, string pattern)
+        => MapGetInternal<TQuery>(builder, new RouteMetaData(pattern));
+
+    private static RouteHandlerBuilder MapGetInternal<TQuery>(IEndpointRouteBuilder builder, RouteMetaData metaData)
     {
-        //TODO throw exception if this is not a query
         if (!typeof(TQuery).GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>)))
         {
             throw new InvalidOperationException($"Type {typeof(TQuery).Name} is not a query. Only queries can be used in get endpoints");
@@ -76,7 +75,7 @@ public static class RouteBuilderExtensions
         var createTypedDelegateMethod = CreateTypedQueryDelegateMethod.MakeGenericMethod(typeof(TQuery), resultType);
         var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
 
-        return builder.MapGet(pattern, typedDelegate);
+        return builder.MapGet(metaData.Route, typedDelegate).WithMetadata(metaData);
     }
 
     /// <summary>
@@ -87,6 +86,9 @@ public static class RouteBuilderExtensions
     /// <param name="pattern">The route pattern.</param>
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPost<TCommandOrQuery>(this IEndpointRouteBuilder builder, string pattern)
+        => MapPostInternal<TCommandOrQuery>(builder, new RouteMetaData(pattern));
+
+    private static RouteHandlerBuilder MapPostInternal<TCommandOrQuery>(IEndpointRouteBuilder builder, RouteMetaData metaData)
     {
         if (typeof(TCommandOrQuery).GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>)))
         {
@@ -95,54 +97,53 @@ public static class RouteBuilderExtensions
 
             var createTypedDelegateMethod = CreateTypedQueryDelegateForPostMethod.MakeGenericMethod(typeof(TCommandOrQuery), resultType);
             var typedDelegate = (Delegate)createTypedDelegateMethod.Invoke(null, null)!;
-            return builder.MapPost(pattern, typedDelegate);
+            return builder.MapPost(metaData.Route, typedDelegate);
         }
 
-        return builder.MapPost(pattern, (Delegate)GetCreateTypedDelegateMethod<TCommandOrQuery>().Invoke(null, null)!);
+        return builder.MapPost(metaData.Route, CreateParameterizedTypedDelegate(typeof(TCommandOrQuery), metaData)).WithMetadata(metaData);
+    }
+    private static Type CreateParameterType(RouteMetaData routeMetaData, Type commandType)
+    {
+        var routeParameters = ParameterHelper.ExtractRouteParameters(routeMetaData.Route, commandType);
+        var parameterType = ParameterTypeBuilder.CreateParameterType($"{commandType.Name}Parameters", routeParameters);
+        return parameterType;
     }
 
-    private static MethodInfo GetCreateTypedDelegateMethod<TCommand>()
+    private static MethodInfo GetParameterizedTypedDelegateMethod(Type commandType, Type parametersType)
     {
-        var commandType = GetCommandType(typeof(TCommand));
-        if (commandType != null)
+        var returnType = GetReturnType(commandType);
+        if (returnType != null)
         {
-            var resultType = commandType.GetGenericArguments()[0];
-            return CreateTypedCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
+            return CreateParameterizedTypedCommandDelegateWithResultMethod.MakeGenericMethod(commandType, parametersType, returnType);
         }
         else
         {
-            return CreateTypedCommandDelegateMethod.MakeGenericMethod(typeof(TCommand));
+            return CreateParameterizedTypedCommandDelegateMethod.MakeGenericMethod(commandType, parametersType);
         }
     }
 
-    private static MethodInfo GetCreateTypedDeleteDelegateMethod<TCommand>()
+    private static Type? GetReturnType(Type type)
     {
-        var commandType = GetCommandType(typeof(TCommand));
-
-        if (commandType != null)
+        // Check for IQuery<TResult> interface
+        var queryInterface = type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>));
+        if (queryInterface != null)
         {
-            var resultType = commandType.GetGenericArguments()[0];
-            return CreateTypedDeleteCommandDelegateWithResultMethod.MakeGenericMethod(typeof(TCommand), resultType);
+            return queryInterface.GetGenericArguments()[0];
         }
-        else
-        {
-            return CreateTypedDeleteCommandDelegateMethod.MakeGenericMethod(typeof(TCommand));
-        }
-    }
 
-    private static Type? GetCommandType(Type type)
-    {
-        while (type.BaseType != null && type.BaseType != typeof(object))
+        // Check for Command<T> in inheritance hierarchy
+        var currentType = type;
+        while (currentType.BaseType != null && currentType.BaseType != typeof(object))
         {
-            if (type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(Command<>))
+            if (currentType.BaseType.IsGenericType && currentType.BaseType.GetGenericTypeDefinition() == typeof(Command<>))
             {
-                return type.BaseType;
+                return currentType.BaseType.GetGenericArguments()[0];
             }
-            type = type.BaseType;
+            currentType = currentType.BaseType;
         }
+
         return null;
     }
-
 
     /// <summary>
     /// Maps the given <typeparamref name="TCommand"/> to the specified PATCH route <paramref name="pattern"/>.
@@ -152,9 +153,13 @@ public static class RouteBuilderExtensions
     /// <param name="pattern">The route pattern.</param>
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPatch<TCommand>(this IEndpointRouteBuilder builder, string pattern)
-    {
-        return builder.MapPatch(pattern, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
-    }
+        => MapPatchInternal<TCommand>(builder, new RouteMetaData(pattern));
+
+    private static RouteHandlerBuilder MapPatchInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
+        => builder.MapPatch(metaData.Route, CreateParameterizedTypedDelegate(typeof(TCommand), metaData)).WithMetadata(metaData);
+
+    private static Delegate CreateParameterizedTypedDelegate(Type commandType, RouteMetaData metaData)
+        => (Delegate)GetParameterizedTypedDelegateMethod(commandType, CreateParameterType(metaData, commandType)).Invoke(null, null)!;
 
     /// <summary>
     /// Maps the given <typeparamref name="TCommand"/> to the specified PUT route <paramref name="pattern"/>.
@@ -164,9 +169,10 @@ public static class RouteBuilderExtensions
     /// <param name="pattern">The route pattern.</param>
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapPut<TCommand>(this IEndpointRouteBuilder builder, string pattern)
-    {
-        return builder.MapPut(pattern, (Delegate)GetCreateTypedDelegateMethod<TCommand>().Invoke(null, null)!);
-    }
+        => MapPutInternal<TCommand>(builder, new RouteMetaData(pattern));
+
+    private static RouteHandlerBuilder MapPutInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
+        => builder.MapPut(metaData.Route, CreateParameterizedTypedDelegate(typeof(TCommand), metaData)).WithMetadata(metaData);
 
     /// <summary>
     /// Maps the given <typeparamref name="TCommand"/> to the specified DELETE route <paramref name="pattern"/>.
@@ -176,54 +182,19 @@ public static class RouteBuilderExtensions
     /// <param name="pattern">The route pattern.</param>
     /// <returns>A <see cref="RouteHandlerBuilder"/> that can be used to further customize the endpoint.</returns>
     public static RouteHandlerBuilder MapDelete<TCommand>(this IEndpointRouteBuilder builder, string pattern)
-    {
-        return builder.MapDelete(pattern, (Delegate)GetCreateTypedDeleteDelegateMethod<TCommand>().Invoke(null, null)!);
-    }
+        => MapDeleteInternal<TCommand>(builder, new RouteMetaData(pattern));
 
-    private static Func<HttpRequest, ICommandExecutor, TCommand, Task> CreateTypedCommandDelegate<TCommand>()
-    {
-        if (typeof(TCommand).IsDefined(typeof(FromParameters)))
-        {
-            return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
-            {
-                MapRouteValues(request, command);
-                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
-            };
-        }
-        else
-        {
-            return async (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
-            {
-                MapRouteValues(request, command);
-                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
-            };
-        }
-    }
+    private static RouteHandlerBuilder MapDeleteInternal<TCommand>(IEndpointRouteBuilder builder, RouteMetaData metaData)
+        => builder.MapDelete(metaData.Route, CreateParameterizedTypedDelegate(typeof(TCommand), metaData)).WithMetadata(metaData);
 
-    private static Func<HttpRequest, ICommandExecutor, TCommand, Task<TResult>> CreateTypedCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult>
+    private static void MapRouteValues<TCommand>(HttpRequest request, ref TCommand command)
     {
-        if (typeof(TCommand).IsDefined(typeof(FromParameters)))
+        if (command == null)
         {
-            return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
-            {
-                MapRouteValues(request, command);
-                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
-                return command.GetResult()!;
-            };
+            command = (TCommand)RuntimeHelpers.GetUninitializedObject(typeof(TCommand));
         }
-        else
-        {
-            return async (HttpRequest request, ICommandExecutor commandExecutor, [FromBody] TCommand command) =>
-            {
-                MapRouteValues(request, command);
-                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
-                return command.GetResult()!;
-            };
-        }
-    }
 
-    private static void MapRouteValues<TCommand>(HttpRequest request, TCommand command)
-    {
+        // Handle route values (from URL path like /api/{id})
         var routeValues = request.RouteValues;
         if (routeValues.Count > 0)
         {
@@ -237,32 +208,50 @@ public static class RouteBuilderExtensions
                 }
             }
         }
+
+        // Handle query parameters (from URL query string like ?id=1&name=test)
+        var queryParameters = request.Query;
+        if (queryParameters.Count > 0)
+        {
+            foreach (var queryParam in queryParameters)
+            {
+                var property = typeof(TCommand).GetProperty(queryParam.Key, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
+                if (property != null && queryParam.Value.Count > 0)
+                {
+                    // Use the first value if multiple values are provided for the same parameter
+                    var value = queryParam.Value.First();
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        property.SetValue(command, TypeConversionHelper.ConvertTo(value, property.PropertyType));
+                    }
+                }
+            }
+        }
     }
 
-    private static Func<ICommandExecutor, TCommand, Task> CreateTypedDeleteCommandDelegate<TCommand>()
+    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand?, Task> CreateParameterizedTypedCommandDelegate<TCommand, TParameter>()
     {
-        return async (ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
-        {
-            await commandExecutor.ExecuteAsync(command, CancellationToken.None);
-        };
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand? command) =>
+            {
+                MapRouteValues(request, ref command);
+                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+            };
     }
 
-    private static Func<ICommandExecutor, TCommand, Task<TResult>> CreateTypedDeleteCommandDelegateWithResult<TCommand, TResult>() where TCommand : Command<TResult>
+    private static Func<HttpRequest, ICommandExecutor, TParameter, TCommand?, Task<TResult>> CreateParameterizedTypedCommandDelegateWithResult<TCommand, TParameter, TResult>() where TCommand : Command<TResult>
     {
-        return async (ICommandExecutor commandExecutor, [AsParameters] TCommand command) =>
-        {
-            await commandExecutor.ExecuteAsync(command, CancellationToken.None);
-            return command.GetResult()!;
-        };
+        return async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] TParameter parameters, [FromBody] TCommand? command) =>
+            {
+                MapRouteValues(request, ref command);
+                await commandExecutor.ExecuteAsync(command, CancellationToken.None);
+                return command.GetResult()!;
+            };
     }
 
     private static Func<IQueryExecutor, TQuery, Task<TResult>> CreateTypedQueryDelegate<TQuery, TResult>() where TQuery : IQuery<TResult>
-    {
-        return async (IQueryExecutor queryExecutor, [AsParameters] TQuery query) => await queryExecutor.ExecuteAsync(query, CancellationToken.None);
-    }
+        => async (IQueryExecutor queryExecutor, [AsParameters] TQuery query) => await queryExecutor.ExecuteAsync(query, CancellationToken.None);
 
     private static Func<IQueryExecutor, TQuery, Task<TResult>> CreateTypedQueryDelegateForPost<TQuery, TResult>() where TQuery : IQuery<TResult>
-    {
-        return async (IQueryExecutor queryExecutor, [FromBody] TQuery query) => await queryExecutor.ExecuteAsync(query, CancellationToken.None);
-    }
+        => async (IQueryExecutor queryExecutor, [FromBody] TQuery query) => await queryExecutor.ExecuteAsync(query, CancellationToken.None);
 }

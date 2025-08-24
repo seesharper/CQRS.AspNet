@@ -14,123 +14,136 @@ using CQRS.AspNet.MetaData;
 using CQRS.Query.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
-public class ApiException : Exception
-{
-    public HttpStatusCode StatusCode { get; }
-    public ProblemDetails? ProblemDetails { get; }
-    public string? RawResponse { get; }
-
-    public ApiException(HttpStatusCode statusCode, ProblemDetails? problemDetails, string? rawResponse, string message)
-        : base(message)
-    {
-        StatusCode = statusCode;
-        ProblemDetails = problemDetails;
-        RawResponse = rawResponse;
-    }
-}
 
 
 public static class HttpClientExtensions
 {
 
-    public static async Task<HttpResponseMessage> SendAndHandleResponse(this HttpClient client, HttpRequestMessage httpRequest, Func<HttpResponseMessage, bool>? isSuccessful = null, CancellationToken cancellationToken = default)
+    public static async Task<HttpResponseMessage> SendAndHandleResponse(this HttpClient client, HttpRequestMessage httpRequest, Func<HttpResponseMessage, bool>? isSuccessful = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
     {
         isSuccessful ??= (responseMessage) => responseMessage.IsSuccessStatusCode;
+        errorHandler ??= HandleErrorResponse;
         var response = await client.SendAsync(httpRequest, cancellationToken);
         if (!isSuccessful(response))
         {
-            await HandleErrorResponse(response);
+            await errorHandler(response);
         }
         return response;
     }
 
-    public static async Task<TResult?> SendAndHandleResponse<TResult>(this HttpClient client, HttpRequestMessage httpRequest, Func<HttpResponseMessage, bool>? isSuccessful = null, CancellationToken cancellationToken = default)
+    public static async Task<TResult?> SendAndHandleResponse<TResult>(this HttpClient client, HttpRequestMessage httpRequest, Func<HttpResponseMessage, bool>? isSuccessful = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
     {
-        var response = await client.SendAndHandleResponse(httpRequest, isSuccessful, cancellationToken);
-        return await response.Content.As<TResult>();
+        var response = await client.SendAndHandleResponse(httpRequest, isSuccessful, errorHandler, cancellationToken);
+        return await response.Content.As<TResult>(cancellationToken: cancellationToken);
     }
 
     private static async Task HandleErrorResponse(HttpResponseMessage response)
     {
-        string? content = null;
-        ProblemDetails? problemDetails = null;
-
-        try
+        if (response.HasProblemDetails())
         {
-            // Try to parse as ProblemDetails if content-type matches
-            if (response.Content.Headers.ContentType?.MediaType == "application/problem+json" ||
-                response.Content.Headers.ContentType?.MediaType == "application/json")
+            var problemDetails = await response.Content.As<ProblemDetails>();
+            var problemDetailsMessage = CreateErrorMessageFromProblemDetails(problemDetails);
+            var message = $"HTTP request ({GetUrlFromResponseMessage(response)}) failed with status code {(int)response.StatusCode} ({response.StatusCode}): {response.ReasonPhrase}. Problem Details: {problemDetailsMessage}";
+            throw new HttpRequestException(message, null, response.StatusCode);
+        }
+        else
+        {
+            var stringResponse = await response.Content.ReadAsStringAsync();
+
+            // If the response does not have ProblemDetails, we can throw a generic exception with the status code and reason phrase.
+            var message = $"HTTP request ({GetUrlFromResponseMessage(response)}) failed with status code {(int)response.StatusCode} ({response.StatusCode}): {response.ReasonPhrase} The raw string response was: {stringResponse}";
+            throw new HttpRequestException(message, null, response.StatusCode);
+        }
+    }
+
+    private static string CreateErrorMessageFromProblemDetails(ProblemDetails problemDetails)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Title: {problemDetails.Title}");
+        sb.AppendLine($"Status: {problemDetails.Status}");
+        sb.AppendLine($"Detail: {problemDetails.Detail}");
+        sb.AppendLine($"Instance: {problemDetails.Instance}");
+        if (problemDetails.Extensions != null)
+        {
+            foreach (var extension in problemDetails.Extensions)
             {
-                problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+                sb.AppendLine($"{extension.Key}: {extension.Value}");
             }
         }
-        catch (JsonException)
-        {
-            // If parsing fails, we'll just keep the raw content
-        }
-        if (problemDetails == null)
-        {
-            content = await response.Content.ReadAsStringAsync();
-        }
+        return sb.ToString();
+    }
 
-
-        var message = problemDetails?.Title ?? content;
-        throw new ApiException(
-            response.StatusCode,
-            problemDetails,
-            content,
-            $"HTTP request failed with status code {(int)response.StatusCode} ({response.StatusCode}): {message}"
-        );
+    private static string GetUrlFromResponseMessage(HttpResponseMessage response)
+    {
+        if (response.RequestMessage == null)
+        {
+            return string.Empty;
+        }
+        return response.RequestMessage.RequestUri?.ToString() ?? string.Empty;
     }
 
 
-    public static async Task<TResult> Get<TResult>(this HttpClient client, IQuery<TResult> query, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default)
+
+
+    public static async Task<TResult> Get<TResult>(this HttpClient client, IQuery<TResult> query, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
     {
         var route = query.GetType().GetCustomAttribute<GetAttribute>()!.Route;
         var uri = PlaceholderReplacer.ReplacePlaceholdersWithQueryParameters(route, query);
         var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri);
-        var response = await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
+        var response = await client.SendAndHandleResponse(httpRequest, success, errorHandler, cancellationToken);
         return await response.Content.As<TResult>(cancellationToken: cancellationToken);
     }
 
-    public static async Task<TResult> Post<TResult>(this HttpClient client, PostCommand<TResult> command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default)
 
+    // Todo create an overload that provides the route 
+    public static async Task<TResult> Get<TResult>(this HttpClient client, GetQuery<TResult> query, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
     {
-        var response = await PostAndHandleResponse(client, command, success, cancellationToken);
+        var route = query.GetType().GetCustomAttribute<GetAttribute>()!.Route;
+        var uri = PlaceholderReplacer.ReplacePlaceholdersWithQueryParameters(route, query);
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri);
+        var response = await client.SendAndHandleResponse(httpRequest, success, errorHandler, cancellationToken);
         return await response.Content.As<TResult>(cancellationToken: cancellationToken);
     }
 
-    public static async Task<HttpResponseMessage> Post(this HttpClient client, PostCommand command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default)
+
+    public static async Task<TValue> Post<TValue>(this HttpClient client, PostCommand<TValue> command, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
     {
-        return await PostAndHandleResponse(client, command, success, cancellationToken);
+        var response = await PostAndHandleResponse(client, command, success, errorHandler, cancellationToken);
+        var value = await response.Content.As<TValue>(cancellationToken: cancellationToken);
+        return value!;
     }
 
-    private static async Task<HttpResponseMessage> PostAndHandleResponse<TCommand>(HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success, CancellationToken cancellationToken) where TCommand : class
+    public static async Task<HttpResponseMessage> Post(this HttpClient client, PostCommand command, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default)
     {
-        success ??= (response) => response.StatusCode == HttpStatusCode.Created;
+        return await PostAndHandleResponse(client, command, success, errorHandler, cancellationToken);
+    }
+
+    private static async Task<HttpResponseMessage> PostAndHandleResponse<TCommand>(HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success, Func<HttpResponseMessage, Task>? errorHandler, CancellationToken cancellationToken) where TCommand : class
+    {
+        success ??= (response) => response.IsSuccessStatusCode;
         var route = command.GetType().GetCustomAttribute<PostAttribute>()!.Route;
         var uri = PlaceholderReplacer.ReplacePlaceholders(route, command);
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri);
         httpRequest.Content = JsonContent.Create(command, command.GetType());
-        return await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
+        return await client.SendAndHandleResponse(httpRequest, success, errorHandler, cancellationToken);
     }
 
-    public async static Task Patch<TCommand>(this HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default) where TCommand : class
+    public async static Task Patch<TCommand>(this HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default) where TCommand : class
     {
         success ??= (response) => response.StatusCode == HttpStatusCode.NoContent;
         var route = command.GetType().GetCustomAttribute<PatchAttribute>()!.Route;
         var uri = PlaceholderReplacer.ReplacePlaceholders(route, command);
         var httpRequest = new HttpRequestMessage(HttpMethod.Patch, uri);
         httpRequest.Content = JsonContent.Create(command);
-        await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
+        await client.SendAndHandleResponse(httpRequest, success, errorHandler, cancellationToken);
     }
 
-    public async static Task Delete<TCommand>(this HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success = null, CancellationToken cancellationToken = default) where TCommand : class
+    public async static Task Delete<TCommand>(this HttpClient client, TCommand command, Func<HttpResponseMessage, bool>? success = null, Func<HttpResponseMessage, Task>? errorHandler = null, CancellationToken cancellationToken = default) where TCommand : class
     {
         success ??= (response) => response.StatusCode == HttpStatusCode.NoContent;
         var route = command.GetType().GetCustomAttribute<DeleteAttribute>()!.Route;
         var uri = PlaceholderReplacer.ReplacePlaceholders(route, command);
         var httpRequest = new HttpRequestMessage(HttpMethod.Delete, uri);
-        await client.SendAndHandleResponse(httpRequest, success, cancellationToken);
+        await client.SendAndHandleResponse(httpRequest, success, errorHandler, cancellationToken);
     }
 }

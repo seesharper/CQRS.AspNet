@@ -1,5 +1,6 @@
 using CQRS.Command.Abstractions;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http.Metadata;
 
 namespace CQRS.AspNet;
 
