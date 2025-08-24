@@ -1,5 +1,4 @@
 using System.Reflection;
-using CQRS.Command.Abstractions;
 using CQRS.Query.Abstractions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -30,7 +29,7 @@ public class AnyResult<TValue> : IResult, IValueHttpResult, IValueHttpResult<TVa
 
     public static void PopulateMetadata(MethodInfo method, EndpointBuilder builder)
     {
-        // ((IEndpointMetadataProvider)_innerResult.GetType()).PopulateMetadata(method, builder);
+        
     }
 
     public Task ExecuteAsync(HttpContext httpContext)
@@ -55,8 +54,6 @@ public record PatchCommand : ProblemCommand<IResult>;
 public record DeleteCommand : ProblemCommand<IResult>;
 
 public record GetQuery<TValue> : IQuery<Results<Ok<TValue>, ProblemHttpResult>>;
-
-public record PostCustomer : PostCommand<int>;
 
 
 /// <summary>

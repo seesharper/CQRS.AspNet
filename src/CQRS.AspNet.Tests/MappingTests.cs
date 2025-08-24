@@ -304,7 +304,7 @@ public class MappingTests
     }
 
     [Fact]
-    public async Task ShouldHandlerPostWithoutBody()
+    public async Task ShouldHandlePostWithoutBody()
     {
         var factory = new TestApplication<Program>();
         var commandHandlerMock = factory.MockCommandHandler<PostCommandWithoutBody>();
