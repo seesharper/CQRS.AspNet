@@ -28,6 +28,10 @@ public static class RouteHandlerBuilderExtensions
         {
             builder.WithName(metaData.Name);
         }
+        if (metaData.ExcludeFromDescription)
+        {
+            builder.ExcludeFromDescription();
+        }
         return builder;
     }
 }
