@@ -41,7 +41,7 @@ public class SampleQueryWithGuidRouteValueHandler : IQueryHandler<SampleQueryWit
 
 
 [Get("sample-get-query-with-query-parameters")]
-public record SampleGetQueryWithQueryParameters(string Name, int Age = 20) : IQuery<SampleGetQueryWithQueryParametersResult>;
+public record SampleGetQueryWithQueryParameters([Description("The name of the customer")] string Name, [Description("The age of the customer")] int Age = 20) : IQuery<SampleGetQueryWithQueryParametersResult>;
 
 public record SampleGetQueryWithQueryParametersResult(string Name, string Address);
 

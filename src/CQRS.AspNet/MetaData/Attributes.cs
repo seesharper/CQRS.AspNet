@@ -31,7 +31,12 @@ public abstract class RouteBaseAttribute([StringSyntax("Route")] string route) :
     /// </summary>
     public bool ExcludeFromDescription { get; set; }
 
-    public RouteMetaData ToMetaData() => new(Route, Description, Summary, Name, ExcludeFromDescription);
+    /// <summary>
+    /// Tags to categorize the endpoint in API documentation (e.g., OpenAPI/Swagger).
+    /// </summary>
+    public string[] Tags { get; set; } = [];
+
+    public RouteMetaData ToMetaData() => new(Route, Description, Summary, Name, ExcludeFromDescription, Tags);
 };
 
 public class GetAttribute([StringSyntax("Route")] string route)

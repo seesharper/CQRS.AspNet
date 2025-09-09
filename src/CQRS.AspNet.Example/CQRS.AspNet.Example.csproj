@@ -7,8 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CQRS.LightInject" Version="1.5.1" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />    
     <PackageReference Include="LightInject.Microsoft.Hosting" Version="2.1.3" />
     <InternalsVisibleTo Include="CQRS.AspNet.Tests" />
   </ItemGroup>

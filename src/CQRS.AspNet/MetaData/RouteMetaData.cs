@@ -6,5 +6,6 @@ public record RouteMetaData(
     string? Description = null,
     string? Summary = null,
     string? Name = null,
-    bool ExcludeFromDescription = false
+    bool ExcludeFromDescription = false,
+    string[]? Tags = null
 );
