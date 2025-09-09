@@ -1,5 +1,6 @@
 using CQRS.AspNet.MetaData;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.OpenApi.Models;
 
 namespace CQRS.AspNet;
 
@@ -28,6 +29,16 @@ public static class RouteHandlerBuilderExtensions
         {
             builder.WithName(metaData.Name);
         }
+        if (metaData.ExcludeFromDescription)
+        {
+            builder.ExcludeFromDescription();
+        }
+        if (metaData.Tags != null && metaData.Tags.Length > 0)
+        {
+            builder.WithTags(metaData.Tags);
+        }
+
+
         return builder;
     }
 }

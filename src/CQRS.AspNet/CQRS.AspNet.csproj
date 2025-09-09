@@ -4,7 +4,7 @@
     <Authors>Bernhard Richter</Authors>
     <Description>Allows commands and queries to be mapped as minimal API endpoints.</Description>
     <RepositoryUrl>https://github.com/seesharper/CQRS.AspNet</RepositoryUrl>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>library</OutputType>
@@ -16,5 +16,6 @@
   <ItemGroup>
     <PackageReference Include="CQRS.Command.Abstractions" Version="1.2.0" />
     <PackageReference Include="CQRS.Query.Abstractions" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
   </ItemGroup>
 </Project>

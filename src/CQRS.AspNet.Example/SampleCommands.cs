@@ -7,7 +7,7 @@ namespace CQRS.AspNet.Example;
 
 public record SampleCommand(int Id, string Name, string Address, int Age);
 
-[Post("/post-command-with-result", Description = "This command returns a Created result.")]
+[Post("/post-command-with-result", Description = "This command returns a Created result.", Tags = ["Commands", "Example"])]
 public record PostCommandWithResult(int Id) : Command<Results<ProblemHttpResult, Created>>;
 
 public class PostCommandWithResultHandler : ICommandHandler<PostCommandWithResult>
@@ -43,7 +43,7 @@ public class PutCommandWithResultHandler : ICommandHandler<PutCommandWithResult>
     }
 }
 
-[Delete("/delete-command-with-result/{id}")]
+[Delete("/delete-command-with-result/{id}", Tags = ["Commands", "Delete", "Management"])]
 public record DeleteCommandWithResult(int Id) : Command<Results<ProblemHttpResult, Ok<DeleteCommandResult>>>;
 
 public class DeleteCommandWithResultHandler : ICommandHandler<DeleteCommandWithResult>

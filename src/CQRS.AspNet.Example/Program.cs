@@ -8,32 +8,22 @@ using Microsoft.AspNetCore.Mvc;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseLightInject(sr => sr.RegisterFrom<CompositionRoot>());
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient("RestfulClient", client =>
 {
     client.BaseAddress = new Uri("https://api.restful-api.dev/");
 }).AddAsKeyed(lifetime: ServiceLifetime.Singleton);
 
-/*
-serviceCollection.AddKeyedScoped<IKeyedService, KeyedService>("KeyedService");
-        serviceCollection.AddKeyedScoped<IKeyedService, AnotherKeyedService>("AnotherKeyedService");
-        serviceCollection.AddScoped<IServiceWithKeyedService>(sp => new ServiceWithKeyedService(sp.GetKeyedService<IKeyedService>("AnotherKeyedService")));
-        */
 
 builder.Services.AddKeyedTransient<IKeyedService, CQRS.AspNet.Example.KeyedService>("KeyedService");
 builder.Services.AddKeyedTransient<IKeyedService, CQRS.AspNet.Example.AnotherKeyedService>("AnotherKeyedService");
-
+builder.Services.AddOpenApi("v1");
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
 }
 
 if (app.Configuration.GetValue<bool>("UseCqrsEndpointsFromAssembly"))
@@ -72,10 +62,12 @@ app.MapPost("whatever", async ([AsParameters] SampleParameters parameters, [From
 app.MapGet<SampleQuery>("/sample-query/{name}/{age}");
 app.MapGet<SampleQuery>("/sample-query/{name}");
 
-app.MapPost("testing/{name}/{age}", async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] SampleParameters parameters, [FromBody] PostCommandWithoutBody command) =>
+var test = app.MapPost("testing/{name}/{age}", async (HttpRequest request, ICommandExecutor commandExecutor, [AsParameters] SampleParameters parameters, [FromBody] PostCommandWithoutBody command) =>
 {
     //return TypedResults.Ok(42);
 });
+
+
 
 
 app.MapPost<SampleCommand>("/sample-command");
