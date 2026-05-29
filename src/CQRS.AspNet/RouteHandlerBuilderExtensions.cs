@@ -1,6 +1,5 @@
 using CQRS.AspNet.MetaData;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.OpenApi.Models;
 
 namespace CQRS.AspNet;
 
