@@ -9,6 +9,7 @@
     <Nullable>enable</Nullable>
     <OutputType>library</OutputType>
     <!-- <TreatWarningsAsErrors>true</TreatWarningsAsErrors> -->
+    <WarningsAsErrors>$(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904;NU1905</WarningsAsErrors>
     <IsPackable>true</IsPackable>
     <RepositoryType>git</RepositoryType>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -16,6 +17,7 @@
   <ItemGroup>
     <PackageReference Include="CQRS.Command.Abstractions" Version="1.2.0" />
     <PackageReference Include="CQRS.Query.Abstractions" Version="1.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.10.0" />
   </ItemGroup>
 </Project>
